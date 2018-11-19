@@ -86,7 +86,7 @@ model10 = load(weights10)
 # pred = np.argmax(prediction, axis=1)
 
 
-# Predictions by most common prediction
+# Prediction by most common prediction in predictions
 predictions1 = np.argmax(model1.predict(test_x), axis=1)
 predictions2 = np.argmax(model2.predict(test_x), axis=1)
 predictions3 = np.argmax(model3.predict(test_x), axis=1)
