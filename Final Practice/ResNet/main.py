@@ -9,11 +9,11 @@ num_classes = 10
 
 y_train = tf.keras.utils.to_categorical(y_train, num_classes=num_classes)
 y_test = tf.keras.utils.to_categorical(y_test, num_classes=num_classes)
-inut_shape = (32, 32, 3)
+input_shape = (32, 32, 3)
 
 
 model = tf.keras.models.Sequential()
-model.add(Conv2D(256, (3, 3), input_shape=inut_shape, activation='relu', padding='same'))
+model.add(Conv2D(256, (3, 3), input_shape=input_shape, activation='relu', padding='same'))
 model.add(MaxPool2D())
 
 model.add(Conv2D(128, (3, 3), activation='relu', padding='same'))
