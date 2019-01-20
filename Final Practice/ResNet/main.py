@@ -1,20 +1,23 @@
 import tensorflow as tf
-import matplotlib.pyplot as plt
-from tensorflow.keras.datasets import cifar10
-from tensorflow.keras.layers import Conv2D, Dense, Dropout, Flatten, MaxPool2D
 
 
-(x_train, y_train), (x_test, y_test) = cifar10.load_data()
-num_classes = 10
+x = tf.constant([[1], [2], [3], [4]], dtype=tf.float32)
+y_true = tf.constant([[0], [-1], [-2], [-3]], dtype=tf.float32)
 
-y_train = tf.keras.utils.to_categorical(y_train, num_classes=num_classes)
-y_test = tf.keras.utils.to_categorical(y_test, num_classes=num_classes)
-input_shape = (32, 32, 3)
+linear_model = tf.layers.Dense(units=1)
 
-model = ResNet(input_shape)
-model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-print(model.summary())
-model.fit(x_train, y_train, batch_size=1000, epochs=100)
+y_pred = linear_model(x)
+loss = tf.losses.mean_squared_error(labels=y_true, predictions=y_pred)
 
-score = model.evaluate(x_test, y_test)
-print(score)
+optimizer = tf.train.GradientDescentOptimizer(0.01)
+train = optimizer.minimize(loss)
+
+init = tf.global_variables_initializer()
+
+sess = tf.Session()
+sess.run(init)
+for i in range(100):
+    _, loss_value = sess.run((train, loss))
+    print(loss_value)
+
+print(sess.run(y_pred))

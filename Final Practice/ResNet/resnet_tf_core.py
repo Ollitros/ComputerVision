@@ -1,10 +1,6 @@
 import tensorflow as tf
-import tensorflow.contrib.eager as tfe
 import numpy as np
 from tensorflow.keras.datasets import cifar10
-
-
-tf.enable_eager_execution()
 
 
 class ResNet():
@@ -13,45 +9,45 @@ class ResNet():
         self.output_shape = output_shape
 
         # Preliminary convolution weights
-        self.w_conv = tfe.Variable(tf.truncated_normal((3, 3, 3, 128), stddev=0.1))
-        self.b_conv = tfe.Variable(tf.constant(0.1, shape=[32]))
+        self.w_conv = tf.Variable(tf.truncated_normal((3, 3, 3, 128), stddev=0.1))
+        self.b_conv = tf.Variable(tf.constant(0.1, shape=[32]))
 
         # Convolve and Straight block weights
         # Convolve block 1 weights
-        self.w_conv_1 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
-        self.w_conv_2 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
-        self.w_shortcut_1 = tfe.Variable(tf.truncated_normal((1, 1, 128, 128), stddev=0.1))
+        self.w_conv_1 = tf.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
+        self.w_conv_2 = tf.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
+        self.w_shortcut_1 = tf.Variable(tf.truncated_normal((1, 1, 128, 128), stddev=0.1))
 
         # Convolve block 2 weights
-        self.w_conv_3 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
-        self.w_conv_4 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
-        self.w_shortcut_2 = tfe.Variable(tf.truncated_normal((1, 1, 128, 128), stddev=0.1))
+        self.w_conv_3 = tf.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
+        self.w_conv_4 = tf.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
+        self.w_shortcut_2 = tf.Variable(tf.truncated_normal((1, 1, 128, 128), stddev=0.1))
 
         # Convolve block 2 weights
-        self.w_conv_5 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
-        self.w_conv_6 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
-        self.w_shortcut_3 = tfe.Variable(tf.truncated_normal((1, 1, 128, 128), stddev=0.1))
+        self.w_conv_5 = tf.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
+        self.w_conv_6 = tf.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
+        self.w_shortcut_3 = tf.Variable(tf.truncated_normal((1, 1, 128, 128), stddev=0.1))
 
         # Straight block 1 weights
-        self.w_straight_1 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
-        self.w_straight_2 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
+        self.w_straight_1 = tf.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
+        self.w_straight_2 = tf.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
 
         # Straight block 2 weights
-        self.w_straight_3 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
-        self.w_straight_4 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
+        self.w_straight_3 = tf.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
+        self.w_straight_4 = tf.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
 
         # Straight block 2 weights
-        self.w_straight_5 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
-        self.w_straight_6 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
+        self.w_straight_5 = tf.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
+        self.w_straight_6 = tf.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
 
         # Final prediction weights
         # Full connect
-        self.W_F = tfe.Variable(tf.random_normal([128, 512]))
-        self.B_F = tfe.Variable(tf.random_normal([512]))
+        self.W_F = tf.Variable(tf.random_normal([128, 512]))
+        self.B_F = tf.Variable(tf.random_normal([512]))
 
         # Output
-        self.W = tfe.Variable(tf.random_normal([512, self.output_shape]))
-        self.B = tfe.Variable(tf.random_normal([self.output_shape]))
+        self.W = tf.Variable(tf.random_normal([512, self.output_shape]))
+        self.B = tf.Variable(tf.random_normal([self.output_shape]))
 
         self.variables = [self.W, self.B, self.w_conv, self.b_conv, self.W_F, self.B_F,
                           self.w_conv_1, self.w_conv_2, self.w_shortcut_1, self.w_straight_1, self.w_straight_2,
@@ -188,23 +184,38 @@ class ResNet():
         return out
 
     def loss(self, predicted_y, desired_y):
-        return tf.reduce_mean(tf.square(predicted_y - desired_y))
 
-    def fit(self, x_train, y_train, epochs, batch_size):
-        optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
+        loss = tf.convert_to_tensor(tf.reduce_mean(tf.square(predicted_y - desired_y)))
+        return loss
 
-        for epoch in range(epochs):
-            for i in range(x_train.shape[0] // batch_size):
-                with tf.GradientTape() as tape:
-                    predicted = model.predict(x_train[(i * batch_size): (i+1) * batch_size])
-                    curr_loss = self.loss(predicted, y_train[(i * batch_size): (i+1) * batch_size])
-                grads = tape.gradient(curr_loss, model.variables)
-                optimizer.apply_gradients(zip(grads, model.variables), global_step=tf.train.get_or_create_global_step())
+    def fit(self, x, y, epochs, batch_size):
 
-            pred = model.predict(x_train[(i * batch_size): (i + 1) * batch_size])
-            current_loss = self.loss(pred, y_train[(i * batch_size): (i + 1) * batch_size])
-            train_accuracy = self.evaluate(y_train[(i * batch_size): (i + 1) * batch_size], pred)
-            print("Loss at step {:d}: {:.3f} ||| accuracy - {}".format(epoch + 1, current_loss, train_accuracy))
+        pred = model.predict(X)
+        loss = self.loss(pred, Y)
+        # train_accuracy = self.evaluate(Y, pred)
+        optimizer = tf.train.AdamOptimizer(learning_rate=0.001).minimize(loss)
+
+        with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())
+
+            for epoch in range(epochs):
+                for i in range(x_train.shape[0] // batch_size):
+                    x = x_train[(i * batch_size): (i + 1) * batch_size]
+                    y = y_train[(i * batch_size): (i + 1) * batch_size]
+
+                    sess.run(optimizer, feed_dict={X: x, Y: y})
+
+                    # loss, train_accuracy, pred = sess.run([loss, train_accuracy, pred], feed_dict={})
+                    # train_accuracy = self.evaluate(Y[(i * batch_size): (i+1) * batch_size], pred)
+
+                    # loss = tf.convert_to_tensor(sess.run(loss, feed_dict={X:x, Y:y}))
+                    # print(type(loss))
+                    # cur_loss = loss.eval()
+#
+                    # # print("Loss at step {:d}: {:.3f} ||| accuracy - {}".format(epoch + 1, loss, train_accuracy))
+                    # print("Loss at step {}: {}".format(epoch + 1, cur_loss))
+
+                print("Loss at step {}: {}".format(epoch + 1, sess.run(loss, feed_dict={X: x, Y: y})))
 
     def evaluate(self, labels, prediction):
         isclose = np.isclose(np.argmax(prediction, 1), np.argmax(labels, 1))
@@ -221,13 +232,20 @@ y_train = tf.keras.utils.to_categorical(y_train, num_classes=num_classes)
 y_test = tf.keras.utils.to_categorical(y_test, num_classes=num_classes)
 input_shape = (32, 32, 3)
 
-x_train = tf.constant(np.reshape(x_train, [-1, 32, 32, 3]), dtype=tf.float32)
-x_test = tf.constant(np.reshape(x_test, [-1, 32, 32, 3]), dtype=tf.float32)
+x_train = np.reshape(x_train, [-1, 32, 32, 3])
+x_test = np.reshape(x_test, [-1, 32, 32, 3])
+
+X = tf.placeholder(tf.float32, shape=[None, 32, 32, 3])
+Y = tf.placeholder(tf.float32, shape=[None, 10])
 
 model = ResNet(input_shape=input_shape, output_shape=num_classes)
-model.fit(x_train, y_train, 10, 600)
+model.fit(x_train, y_train, 10, 1000)
 
 # Evaluation
 predictions = model.predict(x_test[:500])
 accuracy = model.evaluate(labels=y_test[:500], prediction=predictions)
 print('Test accuracy: ', accuracy)
+
+
+
+
