@@ -11,28 +11,10 @@ y_train = tf.keras.utils.to_categorical(y_train, num_classes=num_classes)
 y_test = tf.keras.utils.to_categorical(y_test, num_classes=num_classes)
 input_shape = (32, 32, 3)
 
-
-model = tf.keras.models.Sequential()
-model.add(Conv2D(256, (3, 3), input_shape=input_shape, activation='relu', padding='same'))
-model.add(MaxPool2D())
-
-model.add(Conv2D(128, (3, 3), activation='relu', padding='same'))
-model.add(MaxPool2D())
-
-model.add(Conv2D(64, (3, 3), activation='relu', padding='same'))
-model.add(MaxPool2D())
-
-
-model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
-model.add(MaxPool2D())
-
-model.add(Flatten())
-model.add(Dense(512, activation='relu'))
-model.add(Dropout(0.25))
-model.add(Dense(num_classes, activation='softmax'))
-
+model = ResNet(input_shape)
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-model.fit(x_train, y_train, batch_size=1000, epochs=10)
+print(model.summary())
+model.fit(x_train, y_train, batch_size=1000, epochs=100)
 
 score = model.evaluate(x_test, y_test)
 print(score)
