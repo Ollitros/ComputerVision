@@ -75,6 +75,8 @@ def ResNet(input_shape):
 
 (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 num_classes = 10
+batch_size = 1000
+epochs = 10
 
 y_train = tf.keras.utils.to_categorical(y_train, num_classes=num_classes)
 y_test = tf.keras.utils.to_categorical(y_test, num_classes=num_classes)
@@ -83,7 +85,7 @@ input_shape = (32, 32, 3)
 model = ResNet(input_shape=input_shape)
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 print(model.summary())
-model.fit(x_train, y_train, batch_size=1000, epochs=100)
+model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs)
 
 score = model.evaluate(x_test, y_test)
 print(score)

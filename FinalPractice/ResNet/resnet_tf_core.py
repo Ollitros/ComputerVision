@@ -49,11 +49,6 @@ class ResNet():
         self.W = tf.Variable(tf.random_normal([512, self.output_shape]))
         self.B = tf.Variable(tf.random_normal([self.output_shape]))
 
-        self.variables = [self.W, self.B, self.w_conv, self.b_conv, self.W_F, self.B_F,
-                          self.w_conv_1, self.w_conv_2, self.w_shortcut_1, self.w_straight_1, self.w_straight_2,
-                          self.w_conv_3, self.w_conv_4, self.w_shortcut_2, self.w_straight_3, self.w_straight_4,
-                          self.w_conv_5, self.w_conv_6, self.w_shortcut_3, self.w_straight_5, self.w_straight_6]
-
     def convolve_block_1(self, inputs):
         # Convolution
         norm = tf.nn.batch_normalization(inputs, 1, 1, 0, 1, 0.5)
@@ -174,7 +169,6 @@ class ResNet():
         residuals = tf.nn.max_pool(residuals, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
         # Final prediction
-        # final_pooling = tf.nn.avg_pool(residuals, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
         final_pooling = tf.reduce_mean(residuals, axis=[1, 2])
         flatten = tf.layers.flatten(final_pooling)
         full_dense = tf.matmul(flatten, self.W_F) + self.B_F
@@ -185,14 +179,14 @@ class ResNet():
 
     def loss(self, predicted_y, desired_y):
 
-        loss = tf.convert_to_tensor(tf.reduce_mean(tf.square(predicted_y - desired_y)))
+        loss = tf.convert_to_tensor(tf.losses.softmax_cross_entropy(desired_y, predicted_y))
         return loss
 
     def fit(self, x, y, epochs, batch_size):
 
         pred = model.predict(X)
         loss = self.loss(pred, Y)
-        # train_accuracy = self.evaluate(Y, pred)
+        accuracy = self.evaluate(Y, pred)
         optimizer = tf.train.AdamOptimizer(learning_rate=0.001).minimize(loss)
 
         with tf.Session() as sess:
@@ -205,24 +199,16 @@ class ResNet():
 
                     sess.run(optimizer, feed_dict={X: x, Y: y})
 
-                    # loss, train_accuracy, pred = sess.run([loss, train_accuracy, pred], feed_dict={})
-                    # train_accuracy = self.evaluate(Y[(i * batch_size): (i+1) * batch_size], pred)
-
-                    # loss = tf.convert_to_tensor(sess.run(loss, feed_dict={X:x, Y:y}))
-                    # print(type(loss))
-                    # cur_loss = loss.eval()
-#
-                    # # print("Loss at step {:d}: {:.3f} ||| accuracy - {}".format(epoch + 1, loss, train_accuracy))
-                    # print("Loss at step {}: {}".format(epoch + 1, cur_loss))
+                    # ac = sess.run(accuracy, feed_dict={Y: y, X: x})
 
                 print("Loss at step {}: {}".format(epoch + 1, sess.run(loss, feed_dict={X: x, Y: y})))
 
     def evaluate(self, labels, prediction):
-        isclose = np.isclose(np.argmax(prediction, 1), np.argmax(labels, 1))
+        isclose = np.isclose(np.argmax(prediction), np.argmax(labels))
         total_true = np.sum(isclose)
         accuracy = total_true / isclose.shape
 
-        return accuracy[0]
+        return accuracy
 
 
 (x_train, y_train), (x_test, y_test) = cifar10.load_data()
@@ -237,6 +223,7 @@ x_test = np.reshape(x_test, [-1, 32, 32, 3])
 
 X = tf.placeholder(tf.float32, shape=[None, 32, 32, 3])
 Y = tf.placeholder(tf.float32, shape=[None, 10])
+pred = tf.placeholder(tf.float32, shape=[None, 10])
 
 model = ResNet(input_shape=input_shape, output_shape=num_classes)
 model.fit(x_train, y_train, 10, 1000)

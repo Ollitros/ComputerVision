@@ -188,7 +188,7 @@ class ResNet():
         return out
 
     def loss(self, predicted_y, desired_y):
-        return tf.reduce_mean(tf.square(predicted_y - desired_y))
+        return tf.losses.softmax_cross_entropy(desired_y, predicted_y)
 
     def fit(self, x_train, y_train, epochs, batch_size):
         optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
@@ -225,7 +225,7 @@ x_train = tf.constant(np.reshape(x_train, [-1, 32, 32, 3]), dtype=tf.float32)
 x_test = tf.constant(np.reshape(x_test, [-1, 32, 32, 3]), dtype=tf.float32)
 
 model = ResNet(input_shape=input_shape, output_shape=num_classes)
-model.fit(x_train, y_train, 10, 600)
+model.fit(x_train, y_train, 5, 500)
 
 # Evaluation
 predictions = model.predict(x_test[:500])
