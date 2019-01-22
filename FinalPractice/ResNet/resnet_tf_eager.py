@@ -2,6 +2,7 @@ import tensorflow as tf
 import tensorflow.contrib.eager as tfe
 import numpy as np
 from tensorflow.keras.datasets import cifar10
+from tensorflow.contrib.tensorboard.plugins import projector
 
 
 tf.enable_eager_execution()
@@ -14,35 +15,7 @@ class ResNet():
 
         # Preliminary convolution weights
         self.w_conv = tfe.Variable(tf.truncated_normal((3, 3, 3, 128), stddev=0.1))
-        self.b_conv = tfe.Variable(tf.constant(0.1, shape=[32]))
-
-        # Convolve and Straight block weights
-        # Convolve block 1 weights
-        self.w_conv_1 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
-        self.w_conv_2 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
-        self.w_shortcut_1 = tfe.Variable(tf.truncated_normal((1, 1, 128, 128), stddev=0.1))
-
-        # Convolve block 2 weights
-        self.w_conv_3 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
-        self.w_conv_4 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
-        self.w_shortcut_2 = tfe.Variable(tf.truncated_normal((1, 1, 128, 128), stddev=0.1))
-
-        # Convolve block 2 weights
-        self.w_conv_5 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
-        self.w_conv_6 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
-        self.w_shortcut_3 = tfe.Variable(tf.truncated_normal((1, 1, 128, 128), stddev=0.1))
-
-        # Straight block 1 weights
-        self.w_straight_1 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
-        self.w_straight_2 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
-
-        # Straight block 2 weights
-        self.w_straight_3 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
-        self.w_straight_4 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
-
-        # Straight block 2 weights
-        self.w_straight_5 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
-        self.w_straight_6 = tfe.Variable(tf.truncated_normal((3, 3, 128, 128), stddev=0.1))
+        self.b_conv = tfe.Variable(tf.constant(0.1, shape=[128]))
 
         # Final prediction weights
         # Full connect
@@ -53,20 +26,26 @@ class ResNet():
         self.W = tfe.Variable(tf.random_normal([512, self.output_shape]))
         self.B = tfe.Variable(tf.random_normal([self.output_shape]))
 
-        self.variables = [self.W, self.B, self.w_conv, self.b_conv, self.W_F, self.B_F,
-                          self.w_conv_1, self.w_conv_2, self.w_shortcut_1, self.w_straight_1, self.w_straight_2,
-                          self.w_conv_3, self.w_conv_4, self.w_shortcut_2, self.w_straight_3, self.w_straight_4,
-                          self.w_conv_5, self.w_conv_6, self.w_shortcut_3, self.w_straight_5, self.w_straight_6]
+        self.variables = [self.W, self.B, self.w_conv, self.b_conv, self.W_F, self.B_F]
+        self.weights = []
 
-    def convolve_block_1(self, inputs):
+    def convolve_block(self, inputs, filters):
+
+        self.weights.append(tfe.Variable(tf.truncated_normal((filters[0], filters[1], 128, 128), stddev=0.1)))  # Conv1
+        self.weights.append(tfe.Variable(tf.truncated_normal((filters[0], filters[1], 128, 128), stddev=0.1)))  # Conv2
+        self.weights.append(tfe.Variable(tf.constant(0.1, shape=[128])))                                        # Bias1
+        self.weights.append(tfe.Variable(tf.constant(0.1, shape=[128])))                                        # Bias2
+        self.weights.append(tfe.Variable(tf.truncated_normal((1, 1, 128, 128), stddev=0.1)))                    # Shortcut conv
+        self.weights.append(tfe.Variable(tf.constant(0.1, shape=[128])))                                        # Shortcut bias
+
         # Convolution
         norm = tf.nn.batch_normalization(inputs, 1, 1, 0, 1, 0.5)
-        convolve_1 = tf.nn.conv2d(norm, self.w_conv_1, strides=[1, 1, 1, 1], padding='SAME')
+        convolve_1 = tf.nn.conv2d(norm, self.weights[0], strides=[1, 1, 1, 1], padding='SAME') + self.weights[2]
         dropout = tf.nn.dropout(convolve_1, 0.25)
-        convolve_2 = tf.nn.conv2d(dropout, self.w_conv_2, strides=[1, 1, 1, 1], padding='SAME')
+        convolve_2 = tf.nn.conv2d(dropout, self.weights[1], strides=[1, 1, 1, 1], padding='SAME') + self.weights[3]
 
         # Shortcut
-        shortcut = tf.nn.conv2d(inputs, self.w_shortcut_1, strides=[1, 1, 1, 1], padding='SAME')
+        shortcut = tf.nn.conv2d(inputs, self.weights[4], strides=[1, 1, 1, 1], padding='SAME') + self.weights[5]
         shortcut = tf.nn.batch_normalization(shortcut, 1, 1, 0, 1, 0.5)
 
         # Add
@@ -74,83 +53,37 @@ class ResNet():
         add = tf.add(norm, shortcut)
         residuals = tf.nn.leaky_relu(add)
 
+        self.variables.append(self.weights[0])  # Conv1
+        self.variables.append(self.weights[1])  # Conv2
+        self.variables.append(self.weights[2])  # Bias1
+        self.variables.append(self.weights[3])  # Bias2
+        self.variables.append(self.weights[4])  # Shortcut conv
+        self.variables.append(self.weights[5])  # Shortcut bias
+
         return residuals
 
-    def straight_block_1(self, inputs):
+    def straight_block(self, inputs, filters):
+
+        self.weights.append(tfe.Variable(tf.truncated_normal((filters[0], filters[1], 128, 128), stddev=0.1)))  # Conv1
+        self.weights.append(tfe.Variable(tf.truncated_normal((filters[0], filters[1], 128, 128), stddev=0.1)))  # Conv2
+        self.weights.append(tfe.Variable(tf.constant(0.1, shape=[128])))  # Bias1
+        self.weights.append(tfe.Variable(tf.constant(0.1, shape=[128])))  # Bias2
+
         # Convolution
         norm = tf.nn.batch_normalization(inputs, 1, 1, 0, 1, 0.5)
-        convolve_1 = tf.nn.conv2d(norm, self.w_straight_1, strides=[1, 1, 1, 1], padding='SAME')
+        convolve_1 = tf.nn.conv2d(norm, self.weights[0], strides=[1, 1, 1, 1], padding='SAME') + self.weights[2]
         dropout = tf.nn.dropout(convolve_1, 0.25)
-        convolve_2 = tf.nn.conv2d(dropout, self.w_straight_2, strides=[1, 1, 1, 1], padding='SAME')
+        convolve_2 = tf.nn.conv2d(dropout, self.weights[1], strides=[1, 1, 1, 1], padding='SAME') + self.weights[3]
 
         # Add
         norm = tf.nn.batch_normalization(convolve_2, 1, 1, 0, 1, 0.5)
         add = tf.add(norm, inputs)
         residuals = tf.nn.leaky_relu(add)
 
-        return residuals
-
-    def convolve_block_2(self, inputs):
-        # Convolution
-        norm = tf.nn.batch_normalization(inputs, 1, 1, 0, 1, 0.5)
-        convolve_3 = tf.nn.conv2d(norm, self.w_conv_3, strides=[1, 1, 1, 1], padding='SAME')
-        dropout = tf.nn.dropout(convolve_3, 0.25)
-        convolve_4 = tf.nn.conv2d(dropout, self.w_conv_4, strides=[1, 1, 1, 1], padding='SAME')
-
-        # Shortcut
-        shortcut = tf.nn.conv2d(inputs, self.w_shortcut_2, strides=[1, 1, 1, 1], padding='SAME')
-        shortcut = tf.nn.batch_normalization(shortcut, 1, 1, 0, 1, 0.5)
-
-        # Add
-        norm = tf.nn.batch_normalization(convolve_4, 1, 1, 0, 1, 0.5)
-        add = tf.add(norm, shortcut)
-        residuals = tf.nn.leaky_relu(add)
-
-        return residuals
-
-    def straight_block_2(self, inputs):
-        # Convolution
-        norm = tf.nn.batch_normalization(inputs, 1, 1, 0, 1, 0.5)
-        convolve_3 = tf.nn.conv2d(norm, self.w_straight_3, strides=[1, 1, 1, 1], padding='SAME')
-        dropout = tf.nn.dropout(convolve_3, 0.25)
-        convolve_4 = tf.nn.conv2d(dropout, self.w_straight_4, strides=[1, 1, 1, 1], padding='SAME')
-
-        # Add
-        norm = tf.nn.batch_normalization(convolve_4, 1, 1, 0, 1, 0.5)
-        add = tf.add(norm, inputs)
-        residuals = tf.nn.leaky_relu(add)
-
-        return residuals
-
-    def convolve_block_3(self, inputs):
-        # Convolution
-        norm = tf.nn.batch_normalization(inputs, 1, 1, 0, 1, 0.5)
-        convolve_5 = tf.nn.conv2d(norm, self.w_conv_5, strides=[1, 1, 1, 1], padding='SAME')
-        dropout = tf.nn.dropout(convolve_5, 0.25)
-        convolve_6 = tf.nn.conv2d(dropout, self.w_conv_6, strides=[1, 1, 1, 1], padding='SAME')
-
-        # Shortcut
-        shortcut = tf.nn.conv2d(inputs, self.w_shortcut_3, strides=[1, 1, 1, 1], padding='SAME')
-        shortcut = tf.nn.batch_normalization(shortcut, 1, 1, 0, 1, 0.5)
-
-        # Add
-        norm = tf.nn.batch_normalization(convolve_6, 1, 1, 0, 1, 0.5)
-        add = tf.add(norm, shortcut)
-        residuals = tf.nn.leaky_relu(add)
-
-        return residuals
-
-    def straight_block_3(self, inputs):
-        # Convolution
-        norm = tf.nn.batch_normalization(inputs, 1, 1, 0, 1, 0.5)
-        convolve_5 = tf.nn.conv2d(norm, self.w_straight_5, strides=[1, 1, 1, 1], padding='SAME')
-        dropout = tf.nn.dropout(convolve_5, 0.25)
-        convolve_6 = tf.nn.conv2d(dropout, self.w_straight_6, strides=[1, 1, 1, 1], padding='SAME')
-
-        # Add
-        norm = tf.nn.batch_normalization(convolve_6, 1, 1, 0, 1, 0.5)
-        add = tf.add(norm, inputs)
-        residuals = tf.nn.leaky_relu(add)
+        self.variables.append(self.weights[0])  # Conv1
+        self.variables.append(self.weights[1])  # Conv2
+        self.variables.append(self.weights[2])  # Bias1
+        self.variables.append(self.weights[3])  # Bias2
 
         return residuals
 
@@ -163,18 +96,18 @@ class ResNet():
 
         # Residual blocks
         # Block 1
-        residuals = self.convolve_block_1(pooling)
-        residuals = self.straight_block_1(residuals)
+        residuals = self.convolve_block(pooling, [3, 3])
+        residuals = self.straight_block(residuals, [3, 3])
         residuals = tf.nn.max_pool(residuals, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
         # Block 2
-        residuals = self.convolve_block_2(residuals)
-        residuals = self.straight_block_2(residuals)
+        residuals = self.convolve_block(residuals, [2, 2])
+        residuals = self.straight_block(residuals, [2, 2])
         residuals = tf.nn.max_pool(residuals, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
         # Block 3
-        residuals = self.convolve_block_3(residuals)
-        residuals = self.straight_block_3(residuals)
+        residuals = self.convolve_block(residuals, [1, 1])
+        residuals = self.straight_block(residuals, [1, 1])
         residuals = tf.nn.max_pool(residuals, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
         # Final prediction
@@ -224,8 +157,11 @@ input_shape = (32, 32, 3)
 x_train = tf.constant(np.reshape(x_train, [-1, 32, 32, 3]), dtype=tf.float32)
 x_test = tf.constant(np.reshape(x_test, [-1, 32, 32, 3]), dtype=tf.float32)
 
+writer = tf.contrib.summary.create_file_writer('logs')
+
+
 model = ResNet(input_shape=input_shape, output_shape=num_classes)
-model.fit(x_train, y_train, 5, 500)
+model.fit(x_train, y_train, 10, 300)
 
 # Evaluation
 predictions = model.predict(x_test[:500])
