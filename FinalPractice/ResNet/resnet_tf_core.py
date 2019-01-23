@@ -146,8 +146,6 @@ x_test = np.reshape(x_test, [-1, 32, 32, 3])
 
 X = tf.placeholder(tf.float32, shape=[None, 32, 32, 3])
 Y = tf.placeholder(tf.float32, shape=[None, 10])
-pred = tf.placeholder(tf.float32, shape=[None, 10])
-
 
 model = ResNet(input_shape=input_shape, output_shape=num_classes)
 model.fit(x_train, y_train, 10, 1000)

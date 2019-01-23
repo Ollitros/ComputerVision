@@ -30,12 +30,12 @@ class ResNet():
 
     def convolve_block(self, inputs, filters):
 
-        self.weights.append(tfe.Variable(tf.truncated_normal((filters[0], filters[1], 128, 128), stddev=0.1)))  # Conv1
-        self.weights.append(tfe.Variable(tf.truncated_normal((filters[0], filters[1], 128, 128), stddev=0.1)))  # Conv2
-        self.weights.append(tfe.Variable(tf.constant(0.1, shape=[128])))                                        # Bias1
-        self.weights.append(tfe.Variable(tf.constant(0.1, shape=[128])))                                        # Bias2
-        self.weights.append(tfe.Variable(tf.truncated_normal((1, 1, 128, 128), stddev=0.1)))                    # Shortcut conv
-        self.weights.append(tfe.Variable(tf.constant(0.1, shape=[128])))                                        # Shortcut bias
+        self.weights.append(tfe.Variable(tf.truncated_normal((filters[0], filters[1], 128, 128), stddev=0.1))) # Conv1
+        self.weights.append(tfe.Variable(tf.truncated_normal((filters[0], filters[1], 128, 128), stddev=0.1))) # Conv2
+        self.weights.append(tfe.Variable(tf.constant(0.1, shape=[128])))                                       # Bias1
+        self.weights.append(tfe.Variable(tf.constant(0.1, shape=[128])))                                       # Bias2
+        self.weights.append(tfe.Variable(tf.truncated_normal((1, 1, 128, 128), stddev=0.1)))                   # Shortcut conv
+        self.weights.append(tfe.Variable(tf.constant(0.1, shape=[128])))                                       # Shortcut bias
 
         # Convolution
         norm = tf.nn.batch_normalization(inputs, 1, 1, 0, 1, 0.5)
