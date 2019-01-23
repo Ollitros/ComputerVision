@@ -2,7 +2,6 @@ import tensorflow as tf
 import tensorflow.contrib.eager as tfe
 import numpy as np
 from tensorflow.keras.datasets import cifar10
-from tensorflow.contrib.tensorboard.plugins import projector
 
 
 tf.enable_eager_execution()
@@ -139,6 +138,8 @@ class ResNet():
             train_accuracy = self.evaluate(y_train[(i * batch_size): (i + 1) * batch_size], pred)
             print("Loss at step {:d}: {:.3f} ||| accuracy - {}".format(epoch + 1, current_loss, train_accuracy))
 
+        writer = tf.contrib.summary.create_file_writer('logs')
+
     def evaluate(self, labels, prediction):
         isclose = np.isclose(np.argmax(prediction, 1), np.argmax(labels, 1))
         total_true = np.sum(isclose)
@@ -157,11 +158,8 @@ input_shape = (32, 32, 3)
 x_train = tf.constant(np.reshape(x_train, [-1, 32, 32, 3]), dtype=tf.float32)
 x_test = tf.constant(np.reshape(x_test, [-1, 32, 32, 3]), dtype=tf.float32)
 
-writer = tf.contrib.summary.create_file_writer('logs')
-
-
 model = ResNet(input_shape=input_shape, output_shape=num_classes)
-model.fit(x_train, y_train, 10, 300)
+model.fit(x_train, y_train, 1, 300)
 
 # Evaluation
 predictions = model.predict(x_test[:500])

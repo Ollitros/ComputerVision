@@ -3,7 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
+import time
 from torchvision import transforms
+
+start_time = time.time()
 
 
 class Net(nn.Module):
@@ -277,3 +280,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    print("\n\n\nThe program has been finished for --- %s seconds ---" % (time.time() - start_time))
