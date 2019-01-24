@@ -59,6 +59,8 @@ class ResNet():
         self.variables.append(self.weights[4])  # Shortcut conv
         self.variables.append(self.weights[5])  # Shortcut bias
 
+        self.weights = []
+
         return residuals
 
     def straight_block(self, inputs, filters):
@@ -83,6 +85,8 @@ class ResNet():
         self.variables.append(self.weights[1])  # Conv2
         self.variables.append(self.weights[2])  # Bias1
         self.variables.append(self.weights[3])  # Bias2
+
+        self.weights = []
 
         return residuals
 
@@ -133,10 +137,10 @@ class ResNet():
                 grads = tape.gradient(curr_loss, model.variables)
                 optimizer.apply_gradients(zip(grads, model.variables), global_step=tf.train.get_or_create_global_step())
 
-            pred = model.predict(x_train[(i * batch_size): (i + 1) * batch_size])
-            current_loss = self.loss(pred, y_train[(i * batch_size): (i + 1) * batch_size])
-            train_accuracy = self.evaluate(y_train[(i * batch_size): (i + 1) * batch_size], pred)
-            print("Loss at step {:d}: {:.3f} ||| accuracy - {}".format(epoch + 1, current_loss, train_accuracy))
+                pred = model.predict(x_train[(i * batch_size): (i + 1) * batch_size])
+                current_loss = self.loss(pred, y_train[(i * batch_size): (i + 1) * batch_size])
+                train_accuracy = self.evaluate(y_train[(i * batch_size): (i + 1) * batch_size], pred)
+                print("Loss at step {:d}: {:.3f} ||| accuracy - {}".format(epoch + 1, current_loss, train_accuracy))
 
         writer = tf.contrib.summary.create_file_writer('logs')
 
@@ -159,7 +163,7 @@ x_train = tf.constant(np.reshape(x_train, [-1, 32, 32, 3]), dtype=tf.float32)
 x_test = tf.constant(np.reshape(x_test, [-1, 32, 32, 3]), dtype=tf.float32)
 
 model = ResNet(input_shape=input_shape, output_shape=num_classes)
-model.fit(x_train, y_train, 1, 300)
+model.fit(x_train, y_train, 1, 200)
 
 # Evaluation
 predictions = model.predict(x_test[:500])
