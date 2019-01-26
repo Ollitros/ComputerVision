@@ -7,6 +7,16 @@ from tensorflow.keras.layers import Conv2D, Dense, Dropout, Flatten, MaxPool2D, 
 start_time = time.time()
 
 
+def exe_block(groups, channels):
+    x = concatenate(groups)
+    x = Dropout(0.25)(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU()(x)
+    x = Conv2D(channels, kernel_size=(1, 1), strides=(1, 1), padding='same')(x)
+
+    return x
+
+
 # Convolution block
 # Has convolution in shortcut
 def convolve_block(inputs,  cardinality, filters, channels):
@@ -28,22 +38,14 @@ def convolve_block(inputs,  cardinality, filters, channels):
         groups_1.append(Conv2D(d, filters, padding='same')(group_1))
 
     # the grouped convolutional layer concatenates them as the outputs of the layer
-    x = concatenate(groups_1)
-    x = Dropout(0.25)(x)
-    x = BatchNormalization()(x)
-    x = LeakyReLU()(x)
-    x = Conv2D(channels, kernel_size=(1, 1), strides=(1, 1), padding='same')(x)
+    x = exe_block(groups_1, channels)
 
     groups_2 = []
     for j in range(cardinality):
         group_2 = Lambda(lambda z: z[:, :, :, j * d:j * d + d])(x)
         groups_2.append(Conv2D(d, filters, padding='same')(group_2))
 
-    x = concatenate(groups_2)
-    x = BatchNormalization()(x)
-    x = LeakyReLU()(x)
-    x = Conv2D(channels, kernel_size=(1, 1), strides=(1, 1), padding='same')(x)
-    x = BatchNormalization()(x)
+    x = exe_block(groups_2, channels)
 
     shortcut = Conv2D(channels, (1, 1))(inputs)
     shortcut = BatchNormalization()(shortcut)
@@ -75,22 +77,14 @@ def straight_block(inputs, cardinality, filters, channels):
         groups_1.append(Conv2D(d, filters, padding='same')(group_1))
 
     # the grouped convolutional layer concatenates them as the outputs of the layer
-    x = concatenate(groups_1)
-    x = Dropout(0.25)(x)
-    x = BatchNormalization()(x)
-    x = LeakyReLU()(x)
-    x = Conv2D(channels, kernel_size=(1, 1), strides=(1, 1), padding='same')(x)
+    x = exe_block(groups_1, channels)
 
     groups_2 = []
     for j in range(cardinality):
         group_2 = Lambda(lambda z: z[:, :, :, j * d:j * d + d])(x)
         groups_2.append(Conv2D(d, filters, padding='same')(group_2))
 
-    x = concatenate(groups_2)
-    x = BatchNormalization()(x)
-    x = LeakyReLU()(x)
-    x = Conv2D(channels, kernel_size=(1, 1), strides=(1, 1), padding='same')(x)
-    x = BatchNormalization()(x)
+    x = exe_block(groups_2, channels)
 
     add = tf.keras.layers.add([x, inputs])
     residuals = LeakyReLU()(add)
@@ -134,7 +128,7 @@ def ResNet(input_shape, cardinality):
 (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 num_classes = 10
 batch_size = 500
-epochs = 5
+epochs = 30
 cardinality = 32
 
 y_train = tf.keras.utils.to_categorical(y_train, num_classes=num_classes)
