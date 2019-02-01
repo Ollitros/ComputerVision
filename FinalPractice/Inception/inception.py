@@ -85,7 +85,7 @@ num_classes = 10
 batch_size = 300
 epochs = 5
 alpha = 1.0
-
+print(x_train.shape)
 y_train = tf.keras.utils.to_categorical(y_train, num_classes=num_classes)
 y_test = tf.keras.utils.to_categorical(y_test, num_classes=num_classes)
 input_shape = (32, 32, 3)
