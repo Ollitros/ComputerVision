@@ -2,8 +2,8 @@ import os
 import time
 import matplotlib.pyplot as plt
 import numpy as np
-from FinalPractice.SemanticSegmentation.utils import images_to_binary, load_dataset
-from FinalPractice.SemanticSegmentation.model import model
+from FinalPractice.SemanticSegmentation.SimpleSegmentation.utils import images_to_binary, load_dataset
+from FinalPractice.SemanticSegmentation.SimpleSegmentation.model import model
 from sklearn.model_selection import train_test_split
 
 
