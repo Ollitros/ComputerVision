@@ -2,9 +2,11 @@ import os
 import time
 import matplotlib.pyplot as plt
 import numpy as np
-from FinalPractice.SemanticSegmentation.SimpleSegmentation.utils import images_to_binary, load_dataset, prediction_masking
+from FinalPractice.SemanticSegmentation.SimpleSegmentation.utils import images_to_binary, load_dataset, bce_dice_loss
 from FinalPractice.SemanticSegmentation.SimpleSegmentation.model import model
 from sklearn.model_selection import train_test_split
+from tensorflow.keras.callbacks import ReduceLROnPlateau, ModelCheckpoint
+from tensorflow.keras.optimizers import RMSprop
 
 
 start_time = time.time()
@@ -26,18 +28,28 @@ plt.show()
 
 model = model()
 
-model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
-model.load_weights('data/model.h5')
+model.compile(optimizer=RMSprop(lr=0.0001), loss=bce_dice_loss, metrics=['accuracy'])
+
+
+# checkpoint
+filepath = "data/models/weights-improvement-{epoch:02d}-{val_acc:.2f}.h5"
+checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
+
+# Set a learning rate annealer
+learning_rate_reduction = ReduceLROnPlateau(monitor='val_acc', patience=1, verbose=1, factor=0.99, min_lr=0.00001)
+
 print(model.summary())
-model.fit(x_train, y_train, epochs=1, validation_data=[x_test, y_test], batch_size=10)
+
+# Fit model
+model.fit(x_train, y_train, epochs=50, batch_size=10, validation_data=(x_test, y_test), callbacks=[learning_rate_reduction, checkpoint])
+
+# model.load_weights('data/model.h5')
+
 
 model.save_weights('data/model.h5')
 model.load_weights('data/model.h5')
 prediction = model.predict(x_test)
 
-masked = prediction_masking(prediction[0], x_test[0])
-plt.imshow(masked)
-plt.show()
 for n in range(3):
     plt.subplot(3, 3, n+1)
     plt.imshow(x_test[n])

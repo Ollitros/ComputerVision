@@ -1,8 +1,9 @@
 import os
 import pickle
 import numpy as np
-import cv2 as cv
+import tensorflow.keras.backend as K
 from PIL import Image
+from tensorflow.keras.losses import binary_crossentropy
 
 
 def images_to_binary(size):
@@ -54,24 +55,20 @@ def load_dataset():
     return np.asarray(x), np.asarray(y)
 
 
-def prediction_masking(prediction, original):
+def dice_coeff(y_true, y_pred):
+    smooth = 1.
+    y_true_f = K.flatten(y_true)
+    y_pred_f = K.flatten(y_pred)
+    intersection = K.sum(y_true_f * y_pred_f)
+    score = (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
+    return score
 
-    # Load two images
-    img1 = prediction
-    img2 = original
-    # I want to put logo on top-left corner, So I create a ROI
-    rows, cols, channels = img2.shape
-    roi = img1[0:rows, 0:cols]
-    # Now create a mask of logo and create its inverse mask also
-    img2gray = cv.cvtColor(img2, cv.COLOR_BGR2GRAY)
-    ret, mask = cv.threshold(img2gray, 10, 255, cv.THRESH_BINARY)
-    mask_inv = cv.bitwise_not(mask)
-    # Now black-out the area of logo in ROI
-    img1_bg = cv.bitwise_and(roi, roi, mask=mask_inv)
-    # Take only region of logo from logo image.
-    img2_fg = cv.bitwise_and(img2, img2, mask=mask)
-    # Put logo in ROI and modify the main image
-    dst = cv.add(img1_bg, img2_fg)
-    img1[0:rows, 0:cols] = dst
 
-    return img1
+def dice_loss(y_true, y_pred):
+    loss = 1 - dice_coeff(y_true, y_pred)
+    return loss
+
+
+def bce_dice_loss(y_true, y_pred):
+    loss = binary_crossentropy(y_true, y_pred) + dice_loss(y_true, y_pred)
+    return loss
