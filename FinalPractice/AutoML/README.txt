@@ -1,0 +1,2 @@
+This module is not NasNet or AdaNet but something between of them. This model mainly has stolen or composed of
+different AutoMl algorithms with the purpose to create own architecture and try me to figure out how this works.
