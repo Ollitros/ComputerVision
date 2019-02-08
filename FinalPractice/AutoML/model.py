@@ -1,13 +1,15 @@
 import numpy as np
 from tensorflow.keras.layers import Input, Dense, Conv2D, Flatten
 from tensorflow.keras.models import Model
+from FinalPractice.AutoML.ulits.QLearningAgent import QLearningAgent
 
 
 class Environment:
-    def __init__(self, game_mode=1):
+    def __init__(self, max_filters):
 
         self.actions = None
         self.states = None
+        self.max_filters = max_filters
 
     @property
     def n(self):
@@ -15,76 +17,54 @@ class Environment:
 
     def reset(self):
         self.actions = np.zeros(4)
-        self.states = np.zeros(4)
+        self.states = np.arange(1, self.max_filters)
 
         return self.states
 
 
 class Controller:
+    def __init__(self, max_filters):
+        self.env = Environment(self.max_filters)
+        self.env.reset()
+        n_actions = self.env.n
+        print(n_actions)
+        print(self.env)
+        self.max_filters = max_filters
+        self.agent = QLearningAgent(alpha=0.5, epsilon=0.25, discount=0.99, get_legal_actions=lambda s: range(n_actions))
 
     def train(self):
 
-        env = Environment()
-        env.reset()
-        n_actions = env.n
-        print(n_actions)
-        print(env)
+        total_reward = 0.0
+        s = self.env.reset()
 
-        agent = QLearningAgent(alpha=0.5, epsilon=0.25, discount=0.99,
-                               get_legal_actions=lambda s: range(n_actions))
+        a = self.agent.get_action(s)  # <get agent to pick action given state s>
 
-        def play_and_train(env, agent, t_max=10 ** 4):
-            """This function should
-            - run a full game, actions given by agent.getAction(s)
-            - train agent using agent.update(...) whenever possible
-            - return total reward"""
-            total_reward = 0.0
-            s = env.reset()
+        next_s, r, done = self.env.step(a)
 
-            for t in range(t_max):
-                a = agent.get_action(s)  # <get agent to pick action given state s>
+        # <train (update) agent for state s>
+        self.agent.update(s, a, r, next_s)
 
-                action = env.states
-                if action[a] == 1:
-                    continue
+        total_reward += r
 
-                next_s, r, done = env.step(a)
+        return total_reward
 
-                # <train (update) agent for state s>
-                agent.update(s, a, r, next_s)
+    def step(self):
 
-                s = next_s
-                total_reward += r
-                if done:
-                    break
-
-            return total_reward
-
-        rewards = []
-        for i in range(6000):
-            rewards.append(play_and_train(env, agent))
-            if i % 1000 == 0:
-                clear_output(True)
-                print("mean reward", np.mean(rewards[-100:]))
-                plt.plot(rewards)
-                plt.show()
-
-    def predict(self):
-
-        prediction =
+        s = self.env.reset()
+        prediction = self.agent.get_action(s)
 
         return prediction
 
 
-
 class AutoML:
+
     def __init__(self, max_filters=64):
         self.max_filters = max_filters
-        self.controller = Controller()
+        self.controller = Controller(self.max_filters)
 
     def generator(self, inputs):
 
-        filters = self.controller.predict()
+        filters = self.controller.step()
         x = Conv2D(filters, (3, 3), activation='relu')(inputs)
 
         return x
@@ -107,6 +87,7 @@ class AutoML:
 
         for i in search_epochs:
             model = self.model_block(input_shape=input_shape, num_classes=num_classes)
-            model.fit(x_train, y_train, batch_size=batch_size, epochs=train_epochs, verbose=0)
+            model.fit(x_train, y_train, batch_size=batch_size, epochs=train_epochs, verbose=1)
             accuracy = model.evaluate(x_test, y_test)
             print("Search Step - ", i+1, "||| accuracy - ", accuracy)
+
