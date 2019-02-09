@@ -3,7 +3,7 @@ import time
 import tensorflow.keras.backend as K
 from tensorflow.keras.datasets import cifar10
 from tensorflow.keras.layers import Conv2D, Dense, Dropout, Flatten, MaxPool2D, \
-    Input, BatchNormalization, LeakyReLU, GlobalAveragePooling2D, AveragePooling2D, concatenate, Activation, ZeroPadding2D
+    Input, BatchNormalization, GlobalAveragePooling2D, AveragePooling2D, concatenate, Activation, ZeroPadding2D
 
 
 start_time = time.time()

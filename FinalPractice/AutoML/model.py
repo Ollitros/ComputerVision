@@ -5,6 +5,9 @@ from FinalPractice.AutoML.ulits.QLearningAgent import QLearningAgent
 
 
 class Environment:
+    """
+        Create environment for agent as a field of int`s where each correspond to picked layer
+    """
     def __init__(self):
 
         self.actions = None
@@ -25,7 +28,7 @@ class Environment:
 
         if accuracy is not None:
             if best_accuracy > accuracy:
-                reward = -10
+                reward = -5
                 self.states[-1] = action
             elif best_accuracy < accuracy:
                 reward = 10
@@ -41,6 +44,11 @@ class Environment:
 
 
 class Controller:
+    """
+        An agent which tries to learn which model configuration is the best for particular dataset.
+        First steps performs in train function, then the last one computed in update function, where
+        environment decide which accuracy is satisfied and which is not.
+    """
     def __init__(self, n_layers):
         self.env = Environment()
         self.env.reset()
@@ -86,19 +94,20 @@ class Controller:
 
         return total_reward
 
-    # Step function should be changed, don`t even touch
-    def step(self):
+    # Predict function exists as evaluation for agent
+    def predict(self):
 
         s = self.env.reset()
-        prediction = self.agent.get_action(s)
+        prediction = []
+
+        for i in range(self.n_layers):
+            a = self.agent.get_action(s)  # <get agent to pick action given state s>
+            prediction.append(a)
 
         return prediction
 
 
 class AutoML:
-
-    def __init__(self, max_filters=64):
-        self.max_filters = max_filters
 
     def get_layer(self, i):
 
@@ -112,17 +121,16 @@ class AutoML:
     def generator(self, inputs, controller):
 
         layers = controller.train()
-        print(layers)
         x = self.get_layer(layers[0])(inputs)
         x = self.get_layer(layers[1])(x)
         x = self.get_layer(layers[2])(x)
-        return x
+        return x, layers
 
     def model_block(self, input_shape, num_classes, controller):
 
         inputs = Input(shape=input_shape)
 
-        generated = self.generator(inputs, controller)
+        generated, layers = self.generator(inputs, controller)
 
         x = Flatten()(generated)
         x = Dense(num_classes, activation='softmax')(x)
@@ -130,21 +138,31 @@ class AutoML:
         model = Model(inputs=inputs, outputs=x)
         model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
-        return model
+        return model, layers
 
-    def fit(self, x_train, y_train, x_test, y_test, batch_size, train_epochs, search_epochs, input_shape, num_classes):
+    def fit(self, x_train, y_train, x_test, y_test, batch_size, train_epochs, search_epochs, input_shape, num_classes,
+            best_accuracy=0, option=False):
+
+        """
+            best_accuracy = 0.65  # If you want model does actions to overperform particular accuracy - tune threshold
+            option = False        # If you want model does actions to overperform best accuracy choose - option to True
+        """
+
         controller = Controller(n_layers=3)
-        best_accuracy = 0
         for i in range(search_epochs):
-            model = self.model_block(input_shape=input_shape, num_classes=num_classes, controller=controller)
+            model, layers = self.model_block(input_shape=input_shape, num_classes=num_classes, controller=controller)
             # print(model.summary())
             model.fit(x_train, y_train, batch_size=batch_size, epochs=train_epochs, verbose=0)
             accuracy = model.evaluate(x_test, y_test, verbose=0)
             accuracy = accuracy[1]
             total_reward = controller.update(accuracy, best_accuracy)
+            print(layers)
             print("Search Step - ", i + 1, "||| accuracy - ", accuracy, "||| total reward  - ", total_reward)
 
-            if accuracy > best_accuracy:
-                best_accuracy = accuracy
+            if option:
+                if accuracy > best_accuracy:
+                    best_accuracy = accuracy
 
+        prediction = controller.predict()
+        print("Final prediction after training - ", prediction)
 

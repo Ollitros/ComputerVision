@@ -1,5 +1,5 @@
-from tensorflow.keras.layers import Conv2D, Dense, Dropout, Flatten, MaxPool2D, UpSampling2D, \
-     Input, BatchNormalization, LeakyReLU, GlobalAveragePooling2D, AveragePooling2D, concatenate, Lambda, add, Activation
+from tensorflow.keras.layers import Conv2D, MaxPool2D, UpSampling2D, \
+     Input, BatchNormalization, concatenate, Activation
 from tensorflow.keras.models import Model
 
 

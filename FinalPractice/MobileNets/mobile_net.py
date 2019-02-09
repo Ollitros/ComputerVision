@@ -2,7 +2,7 @@ import tensorflow as tf
 import time
 from tensorflow.keras.datasets import cifar10
 from tensorflow.keras.layers import Conv2D, Dense, Dropout, Flatten, MaxPool2D, \
-    Input, BatchNormalization, LeakyReLU, GlobalAveragePooling2D, AveragePooling2D, DepthwiseConv2D
+    Input, BatchNormalization, LeakyReLU, GlobalAveragePooling2D, DepthwiseConv2D
 
 start_time = time.time()
 

@@ -1,4 +1,4 @@
-from tensorflow.keras import models, layers, utils, backend, optimizers, losses, datasets
+from tensorflow.keras import utils, backend, datasets
 from FinalPractice.AutoML.model import AutoML
 
 
@@ -20,6 +20,6 @@ else:
     y_train = utils.to_categorical(y_train, num_classes)
     y_test = utils.to_categorical(y_test, num_classes)
 
-model = AutoML(max_filters=512)
-model.fit(x_train, y_train, x_test, y_test, train_epochs=1, search_epochs=100,
-          input_shape=input_shape, num_classes=num_classes, batch_size=10000)
+model = AutoML()
+model.fit(x_train, y_train, x_test, y_test, train_epochs=1, search_epochs=10, input_shape=input_shape,
+          num_classes=num_classes, batch_size=10000, option=False, best_accuracy=0.6)
