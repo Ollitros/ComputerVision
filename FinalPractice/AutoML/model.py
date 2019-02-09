@@ -10,8 +10,6 @@ class Environment:
         self.actions = None
         self.states = None
 
-        self.accuracy = 0
-
     @property
     def n(self):
         return self.actions.size
@@ -22,14 +20,14 @@ class Environment:
 
         return self.states
 
-    def step(self, action, step, accuracy=None):
+    def step(self, action, step=0, accuracy=0, best_accuracy=0):
         reward = 0
 
         if accuracy is not None:
-            if self.accuracy > accuracy:
+            if best_accuracy > accuracy:
                 reward = -10
                 self.states[-1] = action
-            elif self.accuracy < accuracy:
+            elif best_accuracy < accuracy:
                 reward = 10
                 self.states[-1] = action
             else:
@@ -78,13 +76,13 @@ class Controller:
 
         return actions
 
-    def update(self, accuracy):
-        next_s, r = self.env.step(self.update_action, accuracy)
+    def update(self, accuracy, best_accuracy):
+        next_s, r = self.env.step(self.update_action, accuracy=accuracy, best_accuracy=best_accuracy)
 
         self.agent.update(self.update_state, self.update_action, r, next_s)
 
-        total_reward = self.total_reward
-        self.total_reward = None
+        total_reward = self.total_reward + r
+        self.total_reward = 0
 
         return total_reward
 
@@ -105,11 +103,11 @@ class AutoML:
     def get_layer(self, i):
 
         if i == 0:
-            return Conv2D(16, (3, 3), activation='relu', padding='same')
+            return Conv2D(4, (3, 3), activation='relu', padding='same')
         elif i == 1:
-            return Conv2D(32, (3, 3), activation='relu', padding='same')
+            return Conv2D(8, (3, 3), activation='relu', padding='same')
         else:
-            return Conv2D(64, (3, 3), activation='relu', padding='same')
+            return Conv2D(16, (3, 3), activation='relu', padding='same')
 
     def generator(self, inputs, controller):
 
@@ -136,12 +134,17 @@ class AutoML:
 
     def fit(self, x_train, y_train, x_test, y_test, batch_size, train_epochs, search_epochs, input_shape, num_classes):
         controller = Controller(n_layers=3)
+        best_accuracy = 0
         for i in range(search_epochs):
             model = self.model_block(input_shape=input_shape, num_classes=num_classes, controller=controller)
-            print(model.summary())
-            model.fit(x_train, y_train, batch_size=batch_size, epochs=train_epochs, verbose=1)
-            accuracy = model.evaluate(x_test, y_test)
-            print("Search Step - ", i+1, "||| accuracy - ", accuracy)
-            total_reward = controller.update(accuracy)
-            print("Search Step - ", i + 1, "||| total reward  - ", total_reward)
+            # print(model.summary())
+            model.fit(x_train, y_train, batch_size=batch_size, epochs=train_epochs, verbose=0)
+            accuracy = model.evaluate(x_test, y_test, verbose=0)
+            accuracy = accuracy[1]
+            total_reward = controller.update(accuracy, best_accuracy)
+            print("Search Step - ", i + 1, "||| accuracy - ", accuracy, "||| total reward  - ", total_reward)
+
+            if accuracy > best_accuracy:
+                best_accuracy = accuracy
+
 
