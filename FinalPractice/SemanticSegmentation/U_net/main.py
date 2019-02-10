@@ -2,8 +2,8 @@ import os
 import time
 import matplotlib.pyplot as plt
 import numpy as np
-from FinalPractice.SemanticSegmentation.SimpleSegmentation.utils import images_to_binary, load_dataset, bce_dice_loss
-from FinalPractice.SemanticSegmentation.SimpleSegmentation.model import model
+from FinalPractice.SemanticSegmentation.U_net.utils import images_to_binary, load_dataset, bce_dice_loss
+from FinalPractice.SemanticSegmentation.U_net.model import model
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.callbacks import ReduceLROnPlateau, ModelCheckpoint
 from tensorflow.keras.optimizers import RMSprop

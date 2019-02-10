@@ -21,5 +21,5 @@ else:
     y_test = utils.to_categorical(y_test, num_classes)
 
 model = AutoML()
-model.fit(x_train, y_train, x_test, y_test, train_epochs=1, search_epochs=10, input_shape=input_shape,
-          num_classes=num_classes, batch_size=10000, option=False, best_accuracy=0.6)
+model.fit(x_train, y_train, x_test, y_test, train_epochs=10, search_epochs=500, input_shape=input_shape,
+          num_classes=num_classes, batch_size=10000, option=False, best_accuracy=0.9)

@@ -112,11 +112,11 @@ class AutoML:
     def get_layer(self, i):
 
         if i == 0:
-            return Conv2D(4, (3, 3), activation='relu', padding='same')
+            return Conv2D(2, (3, 3), activation='relu', padding='same')
         elif i == 1:
-            return Conv2D(8, (3, 3), activation='relu', padding='same')
+            return Conv2D(4, (3, 3), activation='relu', padding='same')
         else:
-            return Conv2D(16, (3, 3), activation='relu', padding='same')
+            return Conv2D(8, (3, 3), activation='relu', padding='same')
 
     def generator(self, inputs, controller):
 
