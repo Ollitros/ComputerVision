@@ -1,0 +1,26 @@
+<annotation>
+	<folder>cars</folder>
+	<filename>car21.jpg</filename>
+	<path>D:\PROJECTS\PyCharmProjects\MyProject\ComputerVision\FinalPractice\ObjectDetection\data\orignal\cars\car21.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>0</width>
+		<height>0</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>car</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>8</xmin>
+			<ymin>54</ymin>
+			<xmax>254</xmax>
+			<ymax>199</ymax>
+		</bndbox>
+	</object>
+</annotation>

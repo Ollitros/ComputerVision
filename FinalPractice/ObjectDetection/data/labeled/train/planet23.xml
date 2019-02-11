@@ -1,0 +1,26 @@
+<annotation>
+	<folder>planets</folder>
+	<filename>planet23.jpg</filename>
+	<path>D:\PROJECTS\PyCharmProjects\MyProject\ComputerVision\FinalPractice\ObjectDetection\data\orignal\planets\planet23.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>0</width>
+		<height>0</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>planet</name>
+		<pose>Unspecified</pose>
+		<truncated>1</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1</xmin>
+			<ymin>3</ymin>
+			<xmax>254</xmax>
+			<ymax>253</ymax>
+		</bndbox>
+	</object>
+</annotation>
