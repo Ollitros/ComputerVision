@@ -1,0 +1,16 @@
+filename,width,height,class,xmin,ymin,xmax,ymax
+car1.jpg,0,0,car,4,88,256,219
+car2.jpg,256,256,car,8,57,248,198
+car3.jpg,256,256,car,5,37,250,203
+car4.jpg,256,256,car,1,72,254,208
+car5.jpg,0,0,car,1,64,256,189
+cat1.jpg,256,256,cat,1,2,254,256
+cat2.jpg,256,256,cat,24,30,242,252
+cat3.jpg,256,256,cat,46,30,225,232
+cat4.jpg,256,256,cat,29,3,232,252
+cat5.jpg,256,256,cat,31,12,221,208
+planet1.jpg,0,0,planet,28,27,224,225
+planet2.jpg,256,256,planet,2,3,256,255
+planet3.jpg,0,0,planet,67,65,199,191
+planet4.jpg,0,0,planet,27,28,226,231
+planet5.jpg,256,256,planet,58,42,219,218

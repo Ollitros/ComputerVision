@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 import xml.etree.ElementTree as ET
 from PIL import Image
-import matplotlib.pyplot as plt
 
 
 # Convert xml format labels to csv format
@@ -40,7 +39,7 @@ def convert_labels_to_csv():
     main()
 
 
-# Convert jpg images to csv format
+# Convert jpg images to npy format
 def convert_features_to_csv():
 
     features = []
@@ -55,4 +54,5 @@ def convert_features_to_csv():
         features = []
 
 
+convert_labels_to_csv()
 convert_features_to_csv()

@@ -1,13 +1,13 @@
 <annotation>
 	<folder>planets</folder>
 	<filename>planet9.jpg</filename>
-	<path>D:\PROJECTS\PyCharmProjects\MyProject\ComputerVision\FinalPractice\ObjectDetection\data\orignal\planets\planet9.jpg</path>
+	<path>D:/PROJECTS/PyCharmProjects/MyProject/ComputerVision/FinalPractice/ObjectDetection/data/orignal/planets/planet9.jpg</path>
 	<source>
 		<database>Unknown</database>
 	</source>
 	<size>
-		<width>0</width>
-		<height>0</height>
+		<width>256</width>
+		<height>256</height>
 		<depth>3</depth>
 	</size>
 	<segmented>0</segmented>
@@ -17,46 +17,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>20</xmin>
-			<ymin>23</ymin>
-			<xmax>130</xmax>
-			<ymax>121</ymax>
-		</bndbox>
-	</object>
-	<object>
-		<name>planet</name>
-		<pose>Unspecified</pose>
-		<truncated>0</truncated>
-		<difficult>0</difficult>
-		<bndbox>
-			<xmin>145</xmin>
-			<ymin>21</ymin>
-			<xmax>246</xmax>
-			<ymax>122</ymax>
-		</bndbox>
-	</object>
-	<object>
-		<name>planet</name>
-		<pose>Unspecified</pose>
-		<truncated>0</truncated>
-		<difficult>0</difficult>
-		<bndbox>
-			<xmin>13</xmin>
-			<ymin>144</ymin>
-			<xmax>119</xmax>
-			<ymax>240</ymax>
-		</bndbox>
-	</object>
-	<object>
-		<name>planet</name>
-		<pose>Unspecified</pose>
-		<truncated>0</truncated>
-		<difficult>0</difficult>
-		<bndbox>
-			<xmin>141</xmin>
-			<ymin>142</ymin>
-			<xmax>243</xmax>
-			<ymax>245</ymax>
+			<xmin>50</xmin>
+			<ymin>26</ymin>
+			<xmax>222</xmax>
+			<ymax>226</ymax>
 		</bndbox>
 	</object>
 </annotation>
