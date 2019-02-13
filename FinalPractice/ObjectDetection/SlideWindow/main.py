@@ -1,38 +1,17 @@
+import cv2 as cv
+import numpy as np
 from FinalPractice.ObjectDetection.SlideWindow.model import InceptionNN
 from FinalPractice.ObjectDetection.SlideWindow import utils
-from tensorflow.keras.callbacks import ReduceLROnPlateau, ModelCheckpoint
 
 
-# Load dataset
-train_x, train_y, test_x, test_y = utils.load_dataset()
-
-# Label preprocessing
-train_y, test_y = utils.label_encoding(train_y, test_y)
-
+# Create model
 input_shape = (256, 256, 1)
-
-# Training model
 model = InceptionNN(input_shape=input_shape, alpha=1.0)
-print(model.summary())
+# Load pretrained weights
+model.load_weights('models/weights-0.93.h5')
 
-# checkpoint
-filepath = "models/weights-improvement-{epoch:02d}-{val_acc:.2f}.h5"
-checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
-
-# Set a learning rate annealer
-learning_rate_reduction = ReduceLROnPlateau(monitor='val_acc', patience=2, verbose=1, factor=0.99, min_lr=0.00001)
-
-model.fit(train_x, train_y, batch_size=1, epochs=10, validation_data=(test_x, test_y),
-          callbacks=[learning_rate_reduction, checkpoint])
-model.save_weights('models/model_weights.h5')
-
-model.load_weights('models/model_weights.h5')
-# model.load_weights('')
-accuracy = model.evaluate(test_x, test_y)
-print(accuracy)
-
-prediction = model.predict(test_x)
-
-for x, y in zip(test_x, prediction):
-    print(y)
-    utils.draw_rect(x, y)
+# Load and convert test image
+x = cv.imread('image.jpg', 0)
+# Make boxed prediction
+boxes, predictions = utils.predict_boxes(model, x, input_shape=input_shape, strides=8, confidance=0.7)
+utils.draw_rect(x, np.asarray(boxes))

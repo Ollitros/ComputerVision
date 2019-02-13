@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import cv2 as cv
+import time
 from sklearn import preprocessing
 from sklearn.utils import shuffle
 
@@ -42,13 +43,55 @@ def label_encoding(train_y, test_y):
     return train_y, test_y
 
 
-def draw_rect(x, y):
+def show_images(x):
 
     # This expression allows to draw color rectangles on greyscale image
     image = cv.cvtColor(x, cv.COLOR_GRAY2RGB)
 
-    # Draw rectangle
-    # image = cv.rectangle(image, (y[0], y[1]), (y[2], y[3]), color=(255, 0, 0), thickness=4)
     cv.imshow('image', image)
     cv.waitKey(0)
     cv.destroyAllWindows()
+
+
+def draw_rect(x, y):
+
+    # This expression allows to draw color rectangles on greyscale image
+    image = cv.cvtColor(x, cv.COLOR_GRAY2RGB)
+    print(y.shape)
+    # Draw rectangle
+    for i in range(y.shape[0]):
+        image = cv.rectangle(image, (y[i][0], y[i][1]), (y[i][2], y[i][3]), color=(255, 0, 0), thickness=1)
+    cv.imshow('image', image)
+    cv.waitKey(0)
+    cv.destroyAllWindows()
+
+
+def predict_boxes(model, x, input_shape, strides, confidance):
+    start_time = time.time()
+    image_shape = x.shape
+    x_min = 0
+    y_min = 0
+    predictions = []
+    boxes = []
+    width = image_shape[0]
+    height = image_shape[1]
+
+    while height - (y_min + input_shape[1]) > 0:
+        print(height - (y_min + input_shape[1]))
+        while width - (x_min + input_shape[0]) > 0:
+            cut = x[x_min: (x_min + input_shape[0]), y_min: (y_min + input_shape[1])]
+            prediction = model.predict(np.reshape(cut, [1, 256, 256, 1]))
+            threshold = prediction > confidance
+
+            if np.any(threshold):
+                predictions.append(prediction)
+                boxes.append([x_min, y_min,
+                             (x_min + input_shape[0]), (y_min + input_shape[1])])
+
+            x_min = x_min + strides
+
+        x_min = 0
+        y_min = y_min + strides
+
+    print("\n\n\nThe program has been finished for --- %s seconds ---" % (time.time() - start_time))
+    return boxes, predictions
