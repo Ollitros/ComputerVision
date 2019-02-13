@@ -23,15 +23,11 @@ def load_dataset():
     # Shuffle data
     train_x, train_y = shuffle(train_x, train_y)
     test_x, test_y = shuffle(test_x, test_y)
-    
+
     return train_x, train_y, test_x, test_y
 
 
 def label_encoding(train_y, test_y):
-
-    # Saving values
-    y1 = train_y[['xmin',  'ymin',  'xmax',  'ymax']]
-    y2 = test_y[['xmin', 'ymin', 'xmax', 'ymax']]
 
     # Encode string labels into integers
     le = preprocessing.LabelEncoder()
@@ -43,22 +39,16 @@ def label_encoding(train_y, test_y):
     train_y = tf.keras.utils.to_categorical(train_y, num_classes=3)
     test_y = tf.keras.utils.to_categorical(test_y, num_classes=3)
 
-    # Join together
-    train_y = y1.join(pd.DataFrame(train_y, dtype='int'))
-    train_y = train_y.values
-    test_y = y2.join(pd.DataFrame(test_y, dtype='int'))
-    test_y = test_y.values
-
     return train_y, test_y
 
 
 def draw_rect(x, y):
 
     # This expression allows to draw color rectangles on greyscale image
-    x = cv.cvtColor(x, cv.COLOR_GRAY2RGB)
+    image = cv.cvtColor(x, cv.COLOR_GRAY2RGB)
 
     # Draw rectangle
-    image = cv.rectangle(x, (y[0], y[1]), (y[2], y[3]), color=(255, 0, 0), thickness=4)
+    # image = cv.rectangle(image, (y[0], y[1]), (y[2], y[3]), color=(255, 0, 0), thickness=4)
     cv.imshow('image', image)
     cv.waitKey(0)
     cv.destroyAllWindows()

@@ -70,12 +70,9 @@ def InceptionNN(input_shape, alpha=1.0):
     x = Flatten()(x)
     x = Dense(512, activation='relu')(x)
     x = Dropout(0.25)(x)
-    rectangles = Dense(4)(x)
     classes = Dense(3, activation='softmax')(x)
 
-    x = concatenate([rectangles, classes])
-
-    model = Model(inputs=[inputs], outputs=[x])
+    model = Model(inputs=[inputs], outputs=[classes])
     model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
 
     return model
