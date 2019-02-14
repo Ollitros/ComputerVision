@@ -2,7 +2,6 @@ import tensorflow as tf
 from tensorflow.keras.layers import Conv2D, MaxPool2D, GlobalAveragePooling2D, \
      Input, BatchNormalization, concatenate, Dropout, Flatten, Dense, AveragePooling2D, LeakyReLU
 from tensorflow.keras.models import Model, Sequential
-from FinalPractice.ObjectDetection.SimpleObjectDetection.custom_loss import custom_loss
 
 
 def conv_block(inputs, filters, filter_size,  alpha, strides=(1, 1)):
@@ -72,12 +71,15 @@ def InceptionNN(input_shape, alpha=1.0):
     x = Dense(512, activation='relu')(x)
     x = Dropout(0.25)(x)
     # rectangles = Dense(4)(x)
-    # classes = Dense(3, activation='sigmoid')(x)
-    x = Dense(7)(x)
+    # classes = Dense(3, activation='softmax')(x)
+
     # x = concatenate([rectangles, classes])
+
+    x = Dense(7)(x)
+
     model = Model(inputs=[inputs], outputs=[x])
 
-    # model.compile(optimizer='adam', loss='mean_absolute_error', metrics=['accuracy'])
+    # model.compile(optimizer='adam', loss='mean_absolute_error', metrics=['accuracy']) <---- the best accuracy
     # model.compile(optimizer='adam', loss=custom_loss, metrics=['accuracy'])
 
     return model

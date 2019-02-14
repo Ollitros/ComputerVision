@@ -22,14 +22,14 @@ checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_o
 # Set a learning rate annealer
 learning_rate_reduction = ReduceLROnPlateau(monitor='val_acc', patience=3, verbose=1, factor=0.99, min_lr=0.00001)
 
-model.fit(train_x, train_y, batch_size=1, epochs=100, validation_data=(test_x, test_y),
+model.fit(train_x, train_y, batch_size=5, epochs=50, validation_data=(test_x, test_y),
           callbacks=[learning_rate_reduction, checkpoint])
 model.save_weights('models/model_weights.h5')
 
 model.load_weights('models/model_weights.h5')
 # model.load_weights('')
-accuracy = model.evaluate(test_x, test_y)
-print(accuracy)
+# accuracy = model.evaluate(test_x, test_y)
+# print(accuracy)
 
 prediction = model.predict(test_x)
 for x, y in zip(test_x, prediction):
