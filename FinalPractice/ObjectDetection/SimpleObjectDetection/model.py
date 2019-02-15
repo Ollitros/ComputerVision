@@ -79,5 +79,6 @@ def InceptionNN(input_shape, alpha=1.0):
 
     # model.compile(optimizer='adam', loss='mean_absolute_error', metrics=['accuracy'])
     # model.compile(optimizer='adam', loss=custom_loss, metrics=['accuracy'])
+    # model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
 
     return model

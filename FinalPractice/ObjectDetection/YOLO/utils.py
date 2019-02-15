@@ -4,6 +4,18 @@ import tensorflow as tf
 import cv2 as cv
 from sklearn import preprocessing
 from sklearn.utils import shuffle
+from functools import reduce
+
+
+def compose(*funcs):
+    """Compose arbitrarily many functions, evaluated left to right.
+    Reference: https://mathieularose.com/function-composition-in-python/
+    """
+    # return lambda x: reduce(lambda v, f: f(v), funcs, x)
+    if funcs:
+        return reduce(lambda f, g: lambda *a, **kw: g(f(*a, **kw)), funcs)
+    else:
+        raise ValueError('Composition of empty sequence not supported.')
 
 
 def load_dataset():
@@ -26,36 +38,45 @@ def load_dataset():
     return train_x, train_y, test_x, test_y
 
 
-def label_encoding(train_y, test_y):
-    # Saving values
-    y1 = train_y[['xmin', 'ymin', 'xmax', 'ymax']]
-    y2 = test_y[['xmin', 'ymin', 'xmax', 'ymax']]
+def preprocessing_boxes(train_y, test_y):
+    # Box preprocessing.
+    # Original boxes stored as 1D list of class, x_min, y_min, x_max, y_max.
+    # Extracting targets
+    train = train_y[['xmin', 'ymin', 'xmax', 'ymax']]
+    test = test_y[['xmin', 'ymin', 'xmax', 'ymax']]
 
     # Encode string labels into integers
     le = preprocessing.LabelEncoder()
     le.fit(['car', 'cat', 'planet'])
-    train_y = le.transform(train_y['class'].values)
-    test_y = le.transform(test_y['class'].values)
-
-    # One hot encoding
-    train_y = tf.keras.utils.to_categorical(train_y, num_classes=3)
-    test_y = tf.keras.utils.to_categorical(test_y, num_classes=3)
+    y1 = le.transform(train_y['class'].values)
+    y2 = le.transform(test_y['class'].values)
 
     # Join together
-    train_y = y1.join(pd.DataFrame(train_y, dtype='int'))
+    train_y = train.join(pd.DataFrame(y1, dtype='int'))
     train_y = train_y.values
-    test_y = y2.join(pd.DataFrame(test_y, dtype='int'))
+    test_y = test.join(pd.DataFrame(y2, dtype='int'))
     test_y = test_y.values
 
-    return train_y, test_y
+    # Get extents as y_min, x_min, y_max, x_max, class for comparision with model output.
+    train_extents = train_y[:, [2, 1, 4, 3, 0]]
+    test_extents = test_y[:, [2, 1, 4, 3, 0]]
+
+    # # Get box parameters as x_center, y_center, box_width, box_height, class.
+    boxes = []
+    for i in [train_y, test_y]:
+
+        boxes_xy = 0.5 * (i[:, 3:5] + i[:, 1:3])
+        boxes_wh = i[:, 3:5] - i[:, 1:3]
+        boxes_xy = boxes_xy / 256
+        boxes_wh = boxes_wh / 256
+        boxes.append(np.concatenate((boxes_xy, boxes_wh, i[:, 0:1]), axis=1))
+
+    train_boxes = boxes[0]
+    test_boxes = boxes[1]
+
+    return train_boxes, test_boxes, train_extents, test_extents
 
 
-def draw_rect(x, y):
-    # This expression allows to draw color rectangles on greyscale image
-    x = cv.cvtColor(x, cv.COLOR_GRAY2RGB)
 
-    # Draw rectangle
-    image = cv.rectangle(x, (y[0], y[1]), (y[2], y[3]), color=(255, 0, 0), thickness=4)
-    cv.imshow('image', image)
-    cv.waitKey(0)
-    cv.destroyAllWindows()
+
+

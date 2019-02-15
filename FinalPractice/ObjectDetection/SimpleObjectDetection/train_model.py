@@ -20,9 +20,9 @@ filepath = "models/weights-improvement-{epoch:02d}-{val_acc:.2f}.h5"
 checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
 
 # Set a learning rate annealer
-learning_rate_reduction = ReduceLROnPlateau(monitor='val_acc', patience=3, verbose=1, factor=0.99, min_lr=0.00001)
+learning_rate_reduction = ReduceLROnPlateau(monitor='val_acc', patience=10, verbose=1, factor=0.99, min_lr=0.00001)
 
-model.fit(train_x, train_y, batch_size=5, epochs=50, validation_data=(test_x, test_y),
+model.fit(train_x, train_y, batch_size=5, epochs=300, validation_data=(test_x, test_y),
           callbacks=[learning_rate_reduction, checkpoint])
 model.save_weights('models/model_weights.h5')
 
