@@ -58,7 +58,7 @@ def get_detector_mask(boxes, anchors):
     matching_true_boxes = [0 for i in range(len(boxes))]
 
     for i, box in enumerate(boxes):
-        detectors_mask[i], matching_true_boxes[i] = preprocess_true_boxes(np.asarray([box]), anchors, [256, 256])
+        detectors_mask[i], matching_true_boxes[i] = preprocess_true_boxes(np.asarray([box]), anchors, [416, 416])
 
     return np.array(detectors_mask), np.array(matching_true_boxes)
 
@@ -74,11 +74,11 @@ def create_model(anchors, class_names, load_pretrained=True, freeze_body=True):
     model: YOLOv2 with custom loss Lambda layer
     '''
 
-    detectors_mask_shape = (8, 8, 5, 1)
-    matching_boxes_shape = (8, 8, 5, 5)
+    detectors_mask_shape = (13, 13, 5, 1)
+    matching_boxes_shape = (13, 13, 5, 5)
 
     # Create model input layers.
-    image_input = Input(shape=(256, 256, 1))
+    image_input = Input(shape=(416, 416, 1))
     boxes_input = Input(shape=(None, 5))
     detectors_mask_input = Input(shape=detectors_mask_shape)
     matching_boxes_input = Input(shape=matching_boxes_shape)
@@ -262,7 +262,7 @@ def main():
 
     train_boxes = np.reshape(train_boxes, [75, 1, 5])
     train(model, class_names, anchors, train_x, train_boxes, detectors_mask, matching_true_boxes,
-          batch_size=[2, 2, 2], epochs=[1, 3, 3])
+          batch_size=[2, 2, 2], epochs=[1, 1, 1])
 
     draw(model_body, class_names, anchors, train_x, image_set='val',
          weights_name='data/models/trained_stage_3_best.h5', save_all=False)

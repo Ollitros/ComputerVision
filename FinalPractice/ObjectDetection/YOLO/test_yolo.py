@@ -14,7 +14,7 @@ from FinalPractice.ObjectDetection.YOLO.yolo_model import yolo_eval, yolo_head
 
 
 def main():
-    model_path = 'data/models/yolo.h5'
+    model_path = 'data/models/model.h5'
     assert model_path.endswith('.h5'), 'Keras model must be a .h5 file.'
     classes_path = "data/classes.txt"
     anchors_path = "data/yolo_anchors.txt"

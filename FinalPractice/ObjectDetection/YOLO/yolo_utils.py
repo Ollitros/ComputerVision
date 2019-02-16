@@ -38,8 +38,10 @@ def draw_boxes(image, boxes, box_classes, class_names, scores=None):
     Returns:
         A copy of `image` modified with given bounding boxes.
     """
-
-    # image = Image.fromarray(np.floor(image * 255 + 0.5).astype('int32'))
+    # This fucking shit works only with such brainfucking canes
+    image = cv.cvtColor(image, cv.COLOR_GRAY2RGB)
+    image = image.astype('uint8')
+    image = Image.fromarray(image, mode='RGB')
 
     font = ImageFont.truetype(font='data/FiraMono-Medium.otf', size=10)
     thickness = 3
@@ -55,8 +57,6 @@ def draw_boxes(image, boxes, box_classes, class_names, scores=None):
         else:
             label = '{}'.format(box_class)
 
-        # image = cv.cvtColor(np.asarray(image), cv.COLOR_GRAY2RGB)
-        image = Image.fromarray(image)
         draw = ImageDraw.Draw(image)
         label_size = draw.textsize(label, font)
 
@@ -83,3 +83,4 @@ def draw_boxes(image, boxes, box_classes, class_names, scores=None):
         del draw
 
     return np.array(image)
+

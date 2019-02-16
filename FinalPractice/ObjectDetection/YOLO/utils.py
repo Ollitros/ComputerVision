@@ -2,6 +2,9 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import cv2 as cv
+import os
+import glob
+from PIL import Image
 from sklearn import preprocessing
 from sklearn.utils import shuffle
 from functools import reduce
@@ -20,15 +23,16 @@ def compose(*funcs):
 
 def load_dataset():
     # Load features
-    train_x = np.load("../data/labeled/train.npy")
+    # train_x = np.load("../data/labeled/train.npy")
     test_x = np.load("../data/labeled/test.npy")
+    train_x = np.load("data/train.npy")
 
     # Load labels
     train_y = pd.read_csv("../data/labeled/train_labels.csv")
     test_y = pd.read_csv("../data/labeled/test_labels.csv")
 
     # Reshape features
-    train_x = np.reshape(train_x, (75, 256, 256, 1))
+    train_x = np.reshape(train_x, (75, 416, 416, 1))
     test_x = np.reshape(test_x, (15, 256, 256, 1))
 
     # Shuffle data
@@ -77,6 +81,22 @@ def preprocessing_boxes(train_y, test_y):
     return train_boxes, test_boxes, train_extents, test_extents
 
 
+def convert_features_to_npy():
+
+    features = []
+    for directory in ['train_images']:
+        image_path = os.path.join(os.getcwd(), 'data/images/{}'.format(directory))
+
+        for file in glob.glob(image_path + '/*.jpg'):
+            image = Image.open(file).convert('L')
+            print(image)
+            image = image.resize((416, 416))
+            print(image)
+            features.append(np.array(image))
+
+        np.save('data/train.npy', features)
+        features = []
 
 
 
+# convert_features_to_npy()

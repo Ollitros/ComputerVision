@@ -40,7 +40,7 @@ def convert_labels_to_csv():
 
 
 # Convert jpg images to npy format
-def convert_features_to_csv():
+def convert_features_to_npy():
 
     features = []
     for directory in ['train', 'test']:
@@ -55,4 +55,4 @@ def convert_features_to_csv():
 
 
 convert_labels_to_csv()
-convert_features_to_csv()
+convert_features_to_npy()
