@@ -179,8 +179,9 @@ def train(model, class_names, anchors, image_data, boxes, detectors_mask, matchi
               callbacks=[logging, checkpoint, early_stopping])
 
     model.save_weights('data/models/trained_stage_3.h5')
-    model.save_weights('data/models/for_pre_load.h5')
-    model.save('data/models/model.h5')
+
+    # Save model body not model to use in testing
+    model_body.save('data/models/model.h5')
 
 
 def draw(model_body, class_names, anchors, image_data, image_set='val',
@@ -262,7 +263,7 @@ def main():
 
     train_boxes = np.reshape(train_boxes, [75, 1, 5])
     train(model, class_names, anchors, train_x, train_boxes, detectors_mask, matching_true_boxes,
-          batch_size=[2, 2, 2], epochs=[1, 1, 1])
+          batch_size=[2, 2, 2], epochs=[10, 100, 100])
 
     draw(model_body, class_names, anchors, train_x, image_set='val',
          weights_name='data/models/trained_stage_3_best.h5', save_all=False)

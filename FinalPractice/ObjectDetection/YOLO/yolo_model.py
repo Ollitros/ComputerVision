@@ -174,8 +174,7 @@ def yolo_loss(args,
     no_object_scale = 1
     class_scale = 1
     coordinates_scale = 1
-    pred_xy, pred_wh, pred_confidence, pred_class_prob = yolo_head(
-        yolo_output, anchors, num_classes)
+    pred_xy, pred_wh, pred_confidence, pred_class_prob = yolo_head(yolo_output, anchors, num_classes)
 
     # Unadjusted box predictions for loss.
     # TODO: Remove extra computation shared with yolo_head.

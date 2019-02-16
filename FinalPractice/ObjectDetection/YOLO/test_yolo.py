@@ -6,11 +6,13 @@ import os
 import random
 
 import numpy as np
+import cv2 as cv
 from keras import backend as K
 from keras.models import load_model
 from PIL import Image, ImageDraw, ImageFont
 
 from FinalPractice.ObjectDetection.YOLO.yolo_model import yolo_eval, yolo_head
+from FinalPractice.ObjectDetection.YOLO.yolo_utils import draw_boxes
 
 
 def main():
@@ -18,8 +20,8 @@ def main():
     assert model_path.endswith('.h5'), 'Keras model must be a .h5 file.'
     classes_path = "data/classes.txt"
     anchors_path = "data/yolo_anchors.txt"
-    output_path = 'data/output_images'
-    test_path = 'data/test_images'
+    output_path = 'data/images/output_images'
+    test_path = 'data/images/test_images'
 
     if not os.path.exists(output_path):
         print('Creating output path {}'.format(output_path))
@@ -83,7 +85,8 @@ def main():
         except IsADirectoryError:
             continue
 
-        image = Image.open(os.path.join(test_path, image_file))
+        image = cv.imread(os.path.join(test_path, image_file), 0)
+        image = Image.fromarray(image)
         if is_fixed_size:  # TODO: When resizing we can use minibatch input.
             resized_image = image.resize(
                 tuple(reversed(model_image_size)), Image.BICUBIC)
@@ -100,17 +103,23 @@ def main():
         image_data /= 255.
         image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
 
+        image_data = np.resize(image_data, [9, 416, 416, 1])
         out_boxes, out_scores, out_classes = sess.run(
             [boxes, scores, classes],
-            feed_dict={
-                yolo_model.input: image_data,
-                input_image_shape: [image.size[1], image.size[0]],
-                K.learning_phase(): 0
+            feed_dict={yolo_model.input: image_data, input_image_shape: [image.size[1], image.size[0]],
+                       K.learning_phase(): 0
             })
         print('Found {} boxes for {}'.format(len(out_boxes), image_file))
 
+        image = np.asarray(image)
+        if len(image.shape) == 2:
+            image = cv.cvtColor(image, cv.COLOR_GRAY2RGB)
+
+        image = image.astype('uint8')
+        image = Image.fromarray(image, mode='RGB')
+
         font = ImageFont.truetype(
-            font='font/FiraMono-Medium.otf',
+            font='data/FiraMono-Medium.otf',
             size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
         thickness = (image.size[0] + image.size[1]) // 300
 
