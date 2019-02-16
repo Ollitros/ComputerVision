@@ -1,23 +1,17 @@
 """
 This is a script that can be used to retrain the YOLOv2 model for your own dataset.
 """
-import argparse
-import io
 import os
-
-import h5py
-import matplotlib.pyplot as plt
 import numpy as np
 import PIL
 import tensorflow as tf
 import cv2 as cv
 from keras import backend as K
 from keras.layers import Input, Lambda, Conv2D
-from keras.models import Model, load_model, save_model
+from keras.models import Model, load_model
 from keras.callbacks import ModelCheckpoint, EarlyStopping, TensorBoard
-
 from FinalPractice.ObjectDetection.YOLO.yolo_model import (preprocess_true_boxes, yolo_body, yolo_eval, yolo_head, yolo_loss)
-from FinalPractice.ObjectDetection.YOLO.yolo_utils import draw_boxes
+from FinalPractice.ObjectDetection.YOLO.utils import draw_boxes
 from FinalPractice.ObjectDetection.YOLO import utils
 
 # Default anchor boxes
@@ -185,7 +179,7 @@ def train(model, class_names, anchors, image_data, boxes, detectors_mask, matchi
 
 
 def draw(model_body, class_names, anchors, image_data, image_set='val',
-            weights_name='data/models/trained_stage_3_best.h5', out_path="data/output_images", save_all=True):
+            weights_name='data/models/trained_stage_3_best.h5', out_path="data/images/val_output_images", save_all=True):
     '''
     Draw bounding boxes on image data
     '''
@@ -208,7 +202,7 @@ def draw(model_body, class_names, anchors, image_data, image_set='val',
     yolo_outputs = yolo_head(model_body.output, anchors, len(class_names))
     input_image_shape = K.placeholder(shape=(2, ))
     boxes, scores, classes = yolo_eval(
-        yolo_outputs, input_image_shape, score_threshold=0, iou_threshold=0)
+        yolo_outputs, input_image_shape, score_threshold=0.1, iou_threshold=0.1)
 
     # Run prediction on overfit image.
     sess = K.get_session()  # TODO: Remove dependence on Tensorflow session.
@@ -247,7 +241,6 @@ def main():
     anchors_path = "data/yolo_anchors.txt"
 
     class_names = get_classes(classes_path)
-    anchors = get_anchors(anchors_path)
 
     # Load dataset
     train_x, train_y, test_x, test_y = utils.load_dataset()
@@ -263,7 +256,7 @@ def main():
 
     train_boxes = np.reshape(train_boxes, [75, 1, 5])
     train(model, class_names, anchors, train_x, train_boxes, detectors_mask, matching_true_boxes,
-          batch_size=[2, 2, 2], epochs=[10, 100, 100])
+          batch_size=[5, 3, 3], epochs=[100, 500, 500])
 
     draw(model_body, class_names, anchors, train_x, image_set='val',
          weights_name='data/models/trained_stage_3_best.h5', save_all=False)

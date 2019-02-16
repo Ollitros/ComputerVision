@@ -1,13 +1,14 @@
-import numpy as np
-import pandas as pd
-import tensorflow as tf
-import cv2 as cv
 import os
 import glob
-from PIL import Image
+import colorsys
+import random
+import cv2 as cv
+import numpy as np
+import pandas as pd
 from sklearn import preprocessing
 from sklearn.utils import shuffle
 from functools import reduce
+from PIL import Image, ImageDraw, ImageFont
 
 
 def compose(*funcs):
@@ -21,25 +22,20 @@ def compose(*funcs):
         raise ValueError('Composition of empty sequence not supported.')
 
 
-def load_dataset():
+def load_train_dataset():
     # Load features
-    # train_x = np.load("../data/labeled/train.npy")
-    test_x = np.load("../data/labeled/test.npy")
     train_x = np.load("data/train.npy")
 
     # Load labels
     train_y = pd.read_csv("../data/labeled/train_labels.csv")
-    test_y = pd.read_csv("../data/labeled/test_labels.csv")
 
     # Reshape features
     train_x = np.reshape(train_x, (75, 416, 416, 1))
-    test_x = np.reshape(test_x, (15, 256, 256, 1))
 
     # Shuffle data
     train_x, train_y = shuffle(train_x, train_y)
-    test_x, test_y = shuffle(test_x, test_y)
 
-    return train_x, train_y, test_x, test_y
+    return train_x, train_y
 
 
 def preprocessing_boxes(train_y, test_y):
@@ -81,6 +77,7 @@ def preprocessing_boxes(train_y, test_y):
     return train_boxes, test_boxes, train_extents, test_extents
 
 
+# Convert original 256x256 images to 416x416 images for training
 def convert_features_to_npy():
 
     features = []
@@ -98,5 +95,80 @@ def convert_features_to_npy():
         features = []
 
 
+def get_colors_for_classes(num_classes):
+    """Return list of random colors for number of classes given."""
+    # Use previously generated colors if num_classes is the same.
+    if (hasattr(get_colors_for_classes, "colors") and
+            len(get_colors_for_classes.colors) == num_classes):
+        return get_colors_for_classes.colors
 
-# convert_features_to_npy()
+    hsv_tuples = [(x / num_classes, 1., 1.) for x in range(num_classes)]
+    colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
+    colors = list(
+        map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)),
+            colors))
+    random.seed(10101)  # Fixed seed for consistent colors across runs.
+    random.shuffle(colors)  # Shuffle colors to decorrelate adjacent classes.
+    random.seed(None)  # Reset seed to default.
+    get_colors_for_classes.colors = colors  # Save colors for future calls.
+    return colors
+
+
+def draw_boxes(image, boxes, box_classes, class_names, scores=None):
+    """Draw bounding boxes on image.
+    Draw bounding boxes with class name and optional box score on image.
+    Args:
+        image: An `array` of shape (width, height, 3) with values in [0, 1].
+        boxes: An `array` of shape (num_boxes, 4) containing box corners as
+            (y_min, x_min, y_max, x_max).
+        box_classes: A `list` of indicies into `class_names`.
+        class_names: A `list` of `string` class names.
+        `scores`: A `list` of scores for each box.
+    Returns:
+        A copy of `image` modified with given bounding boxes.
+    """
+    # This fucking shit works only with such brainfucking canes
+    image = cv.cvtColor(image, cv.COLOR_GRAY2RGB)
+    image = image.astype('uint8')
+    image = Image.fromarray(image, mode='RGB')
+
+    font = ImageFont.truetype(font='data/FiraMono-Medium.otf', size=10)
+    thickness = 3
+
+    colors = get_colors_for_classes(len(class_names))
+
+    for i, c in list(enumerate(box_classes)):
+        box_class = class_names[c]
+        box = boxes[i]
+        if isinstance(scores, np.ndarray):
+            score = scores[i]
+            label = '{} {:.2f}'.format(box_class, score)
+        else:
+            label = '{}'.format(box_class)
+
+        draw = ImageDraw.Draw(image)
+        label_size = draw.textsize(label, font)
+
+        top, left, bottom, right = box
+        top = max(0, np.floor(top + 0.5).astype('int32'))
+        left = max(0, np.floor(left + 0.5).astype('int32'))
+        bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
+        right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
+        print(label, (left, top), (right, bottom))
+
+        if top - label_size[1] >= 0:
+            text_origin = np.array([left, top - label_size[1]])
+        else:
+            text_origin = np.array([left, top + 1])
+
+        # My kingdom for a good redistributable image drawing library.
+        for i in range(thickness):
+            draw.rectangle(
+                [left + i, top + i, right - i, bottom - i], outline=colors[c])
+        draw.rectangle(
+            [tuple(text_origin), tuple(text_origin + label_size)],
+            fill=colors[c])
+        draw.text(text_origin, label, fill=(0, 0, 0), font=font)
+        del draw
+
+    return np.array(image)
