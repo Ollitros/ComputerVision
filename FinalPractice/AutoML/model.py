@@ -140,8 +140,9 @@ class AutoML:
 
         return model, layers
 
-    def fit(self, x_train, y_train, x_test, y_test, batch_size, train_epochs, search_epochs, input_shape, num_classes,
-            best_accuracy=0, option=False):
+    def fit(self, x_train: object, y_train: object, x_test: object, y_test: object, batch_size: object, train_epochs: object, search_epochs: object, input_shape: object,
+            num_classes: object,
+            best_accuracy: object = 0, option: object = False) -> object:
 
         """
             best_accuracy = 0.65  # If you want model does actions to overperform particular accuracy - tune threshold

@@ -12,7 +12,6 @@ from PIL import Image, ImageDraw, ImageFont
 from FinalPractice.ObjectDetection.YOLO.yolo_model import yolo_eval, yolo_head
 
 
-
 def main():
     model_path = 'data/models/model.h5'
     assert model_path.endswith('.h5'), 'Keras model must be a .h5 file.'
@@ -41,7 +40,7 @@ def main():
     # Verify model, anchors, and classes are compatible
     num_classes = len(class_names)
     num_anchors = len(anchors)
-    num_classes = 80
+
     # TODO: Assumes dim ordering is channel last
     model_output_channels = yolo_model.layers[-1].output_shape[-1]
     assert model_output_channels == num_anchors * (num_classes + 5), \
@@ -101,7 +100,7 @@ def main():
         image_data /= 255.
         image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
 
-        image_data = np.resize(image_data, [9, 416, 416, 3])
+        image_data = np.resize(image_data, [9, 416, 416, 1])
         out_boxes, out_scores, out_classes = sess.run(
             [boxes, scores, classes],
             feed_dict={yolo_model.input: image_data, input_image_shape: [image.size[1], image.size[0]],

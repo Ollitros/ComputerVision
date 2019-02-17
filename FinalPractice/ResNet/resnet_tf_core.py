@@ -105,7 +105,7 @@ class ResNet():
         loss = tf.convert_to_tensor(tf.losses.softmax_cross_entropy(desired_y, predicted_y))
         return loss
 
-    def fit(self, x, y, epochs, batch_size):
+    def fit(self, x: object, y: object, epochs: object, batch_size: object) -> object:
 
         pred = model.predict(X)
         loss = self.loss(pred, Y)

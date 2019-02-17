@@ -7,6 +7,7 @@ import PIL
 import tensorflow as tf
 import cv2 as cv
 from keras import backend as K
+from keras.preprocessing.image import ImageDataGenerator
 from keras.layers import Input, Lambda, Conv2D
 from keras.models import Model, load_model
 from keras.callbacks import ModelCheckpoint, EarlyStopping, TensorBoard
@@ -243,10 +244,10 @@ def main():
     class_names = get_classes(classes_path)
 
     # Load dataset
-    train_x, train_y, test_x, test_y = utils.load_dataset()
+    train_x, train_y = utils.load_train_dataset()
 
     # Box preprocessing
-    train_boxes, test_boxes, train_extents, test_extents = utils.preprocessing_boxes(train_y, test_y)
+    train_boxes, train_extents = utils.preprocessing_boxes(train_y)
 
     anchors = YOLO_ANCHORS
 
@@ -256,7 +257,7 @@ def main():
 
     train_boxes = np.reshape(train_boxes, [75, 1, 5])
     train(model, class_names, anchors, train_x, train_boxes, detectors_mask, matching_true_boxes,
-          batch_size=[5, 3, 3], epochs=[100, 500, 500])
+          batch_size=[5, 3, 3], epochs=[50, 120, 80])
 
     draw(model_body, class_names, anchors, train_x, image_set='val',
          weights_name='data/models/trained_stage_3_best.h5', save_all=False)
