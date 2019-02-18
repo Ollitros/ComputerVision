@@ -7,6 +7,10 @@ from tensorflow.keras import backend as K
 from FinalPractice.ObjectDetection.SSD.utils.tensor_sampling_utils import sample_tensors
 from FinalPractice.ObjectDetection.SSD.model.keras_ssd300 import ssd_300
 from FinalPractice.ObjectDetection.SSD.model.keras_loss_function.keras_ssd_loss import SSDLoss
+from FinalPractice.ObjectDetection.SSD.model.keras_layers.keras_layer_AnchorBoxes import AnchorBoxes
+from FinalPractice.ObjectDetection.SSD.model.keras_layers.keras_layer_DecodeDetections import DecodeDetections
+from FinalPractice.ObjectDetection.SSD.model.keras_layers.keras_layer_DecodeDetectionsFast import DecodeDetectionsFast
+from FinalPractice.ObjectDetection.SSD.model.keras_layers.keras_layer_L2Normalization import L2Normalization
 
 from FinalPractice.ObjectDetection.SSD.data_generator.object_detection_2d_data_generator import DataGenerator
 from FinalPractice.ObjectDetection.SSD.data_generator.object_detection_2d_photometric_ops import ConvertTo3Channels
@@ -36,6 +40,26 @@ classifier_names = ['conv4_3_norm_mbox_conf',
                     'conv7_2_mbox_conf',
                     'conv8_2_mbox_conf',
                     'conv9_2_mbox_conf']
+
+# Optional code (look in guide)
+# conv4_3_norm_mbox_conf_kernel = weights_source_file[classifier_names[0]][classifier_names[0]]['kernel:0']
+# conv4_3_norm_mbox_conf_bias = weights_source_file[classifier_names[0]][classifier_names[0]]['bias:0']
+#
+# print("Shape of the '{}' weights:".format(classifier_names[0]))
+# print()
+# print("kernel:\t", conv4_3_norm_mbox_conf_kernel.shape)
+# print("bias:\t", conv4_3_norm_mbox_conf_bias.shape)
+#
+# n_classes_source = 81
+# classes_of_interest = [0, 3, 8, 1, 2, 10, 4, 6, 12]
+#
+# subsampling_indices = []
+# for i in range(int(324/n_classes_source)):
+#     indices = np.array(classes_of_interest) + i * n_classes_source
+#     subsampling_indices.append(indices)
+# subsampling_indices = list(np.concatenate(subsampling_indices))
+#
+# print(subsampling_indices)
 
 # TODO: Set the number of classes in the source weights file. Note that this number must include
 #       the background class, so for MS COCO's 80 classes, this must be 80 + 1 = 81.
@@ -180,12 +204,12 @@ model.compile(optimizer=adam, loss=ssd_loss.compute_loss)
 dataset = DataGenerator()
 
 # TODO: Set the paths to your dataset here.
-images_path = 'data/own_dataset/cars/'
-labels_path = 'data/own_dataset/train_labels.csv'
+images_path = 'data/udacity_dataset/udacity_driving_datasets/'
+labels_path = 'data/udacity_dataset/labels_train.csv'
 
 dataset.parse_csv(images_dir=images_path,
                   labels_filename=labels_path,
-                  input_format=['image_name', 'class_id', 'xmin', 'ymin', 'xmax',  'ymax'], # This is the order of the first six columns in the CSV file that contains the labels for your dataset. If your labels are in XML format, maybe the XML parser will be helpful, check the documentation.
+                  input_format=['image_name', 'xmin', 'xmax', 'ymin', 'ymax', 'class_id'], # This is the order of the first six columns in the CSV file that contains the labels for your dataset. If your labels are in XML format, maybe the XML parser will be helpful, check the documentation.
                   include_classes='all',
                   random_sample=False)
 
