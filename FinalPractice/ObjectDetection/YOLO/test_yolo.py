@@ -21,7 +21,7 @@ def main():
     test_path = 'data/images/test_images'
 
     if not os.path.exists(output_path):
-        print('Creating output path {}'.format(output_path))
+        print('Creating input path {}'.format(output_path))
         os.mkdir(output_path)
 
     sess = K.get_session()  # TODO: Remove dependence on Tensorflow session.
@@ -64,7 +64,7 @@ def main():
     random.shuffle(colors)  # Shuffle colors to decorrelate adjacent classes.
     random.seed(None)  # Reset seed to default.
 
-    # Generate output tensor targets for filtered bounding boxes.
+    # Generate input tensor targets for filtered bounding boxes.
     # TODO: Wrap these backend operations with Keras layers.
     yolo_outputs = yolo_head(yolo_model.output, anchors, len(class_names))
     input_image_shape = K.placeholder(shape=(2, ))
@@ -84,7 +84,7 @@ def main():
 
         image = cv.imread(os.path.join(test_path, image_file), 1)
         image = Image.fromarray(image)
-        if is_fixed_size:  # TODO: When resizing we can use minibatch input.
+        if is_fixed_size:  # TODO: When resizing we can use minibatch raw.
             resized_image = image.resize(
                 tuple(reversed(model_image_size)), Image.BICUBIC)
             image_data = np.array(resized_image, dtype='float32')

@@ -30,7 +30,7 @@ def convolve_block(inputs,  cardinality, filters, channels):
     assert not channels % cardinality
     d = channels // cardinality
 
-    # in a grouped convolution layer, input and output channels are divided into `cardinality` groups
+    # in a grouped convolution layer, raw and input channels are divided into `cardinality` groups
     # and convolutions are separately performed within each group
     groups_1 = []
     for j in range(cardinality):
@@ -69,7 +69,7 @@ def straight_block(inputs, cardinality, filters, channels):
     assert not channels % cardinality
     d = channels // cardinality
 
-    # in a grouped convolution layer, input and output channels are divided into `cardinality` groups
+    # in a grouped convolution layer, raw and input channels are divided into `cardinality` groups
     # and convolutions are separately performed within each group
     groups_1 = []
     for j in range(cardinality):

@@ -23,8 +23,8 @@ def space_to_depth_x2(x):
 
 
 def space_to_depth_x2_output_shape(input_shape):
-    """Determine space_to_depth output shape for block_size=2.
-    Note: For Lambda with TensorFlow backend, output shape may not be needed.
+    """Determine space_to_depth input shape for block_size=2.
+    Note: For Lambda with TensorFlow backend, input shape may not be needed.
     """
     return (input_shape[0], input_shape[1] // 2, input_shape[2] // 2, 4 *
             input_shape[3]) if input_shape[1] else (input_shape[0], None, None,
@@ -302,7 +302,7 @@ def yolo_eval(yolo_outputs,
               max_boxes=10,
               score_threshold=.6,
               iou_threshold=.5):
-    """Evaluate YOLO model on given input batch and return filtered boxes."""
+    """Evaluate YOLO model on given raw batch and return filtered boxes."""
     box_xy, box_wh, box_confidence, box_class_probs = yolo_outputs
     boxes = yolo_boxes_to_corners(box_xy, box_wh)
     boxes, scores, classes = yolo_filter_boxes(

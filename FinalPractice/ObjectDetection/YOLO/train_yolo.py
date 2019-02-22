@@ -65,14 +65,14 @@ def create_model(anchors, class_names, load_pretrained=True, freeze_body=True):
     load_pretrained: whether or not to load the pretrained model or initialize all weights
     freeze_body: whether or not to freeze all weights except for the last layer's
     # Returns:
-    model_body: YOLOv2 with new output layer
+    model_body: YOLOv2 with new input layer
     model: YOLOv2 with custom loss Lambda layer
     '''
 
     detectors_mask_shape = (13, 13, 5, 1)
     matching_boxes_shape = (13, 13, 5, 5)
 
-    # Create model input layers.
+    # Create model raw layers.
     image_input = Input(shape=(416, 416, 1))
     boxes_input = Input(shape=(None, 5))
     detectors_mask_input = Input(shape=detectors_mask_shape)
@@ -199,7 +199,7 @@ def draw(model_body, class_names, anchors, image_data, image_set='val',
     print(image_data.shape)
     model_body.load_weights(weights_name)
 
-    # Create output variables for prediction.
+    # Create input variables for prediction.
     yolo_outputs = yolo_head(model_body.output, anchors, len(class_names))
     input_image_shape = K.placeholder(shape=(2, ))
     boxes, scores, classes = yolo_eval(

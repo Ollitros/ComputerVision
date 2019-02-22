@@ -53,7 +53,7 @@ def preprocessing_boxes(train_y):
     train_y = train.join(pd.DataFrame(y1, dtype='int'))
     train_y = train_y.values
 
-    # Get extents as y_min, x_min, y_max, x_max, class for comparision with model output.
+    # Get extents as y_min, x_min, y_max, x_max, class for comparision with model input.
     train_extents = train_y[:, [2, 1, 4, 3, 0]]
 
     # # Get box parameters as x_center, y_center, box_width, box_height, class.
