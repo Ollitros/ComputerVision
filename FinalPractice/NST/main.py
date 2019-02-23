@@ -89,6 +89,7 @@ def run_style_transfer(content_path,
     # We don't need to (or want to) train any layers of our model, so we set their
     # trainable to false.
     model = get_model()
+
     for layer in model.layers:
         layer.trainable = False
 
@@ -188,11 +189,11 @@ def main():
     tf.enable_eager_execution()
     print("Eager execution: {}".format(tf.executing_eagerly()))
 
-    w, h = prepare_images(style='data/raw/style.jpg', content='data/raw/content.jpg')
-
+    w, h = prepare_images(style='data/pictures/raw/style.jpg', content='data/pictures/raw/content.jpg',
+                          style_path='data/pictures/input/style.jpg', content_path='data/pictures/input/content.jpg')
     # Set up some global values here
-    content_path = 'data/input/content.jpg'
-    style_path = 'data/input/style.jpg'
+    content_path = 'data/pictures/input/content.jpg'
+    style_path = 'data/pictures/input/style.jpg'
 
     content = load_img(content_path).astype('uint8')
     style = load_img(style_path).astype('uint8')
@@ -205,11 +206,11 @@ def main():
     imshow(style, 'Style Image')
     plt.show()
 
-    best, best_loss = run_style_transfer(content_path, style_path, num_iterations=3000)
+    best, best_loss = run_style_transfer(content_path, style_path, num_iterations=1)
 
     image = Image.fromarray(best)
     image = image.resize((w, h))
-    image.save("data/output/result.jpg")
+    image.save("data/pictures/output/result.jpg")
 
     show_results(best, content_path, style_path)
 

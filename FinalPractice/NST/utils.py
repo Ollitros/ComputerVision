@@ -30,15 +30,15 @@ def imshow(img, title=None):
     plt.imshow(out)
 
 
-def prepare_images(style, content):
+def prepare_images(style, content, style_path, content_path):
     image = Image.open(style)
     image = image.resize((512, 384))
-    image.save("data/input/style.JPG")
+    image.save(style_path)
 
     image = Image.open(content)
     width, height = image.size
     image = image.resize((512, 384))
-    image.save("data/input/content.jpg")
+    image.save(content_path)
 
     return width, height
 
