@@ -82,7 +82,7 @@ def compute_grads(cfg):
 
 
 def run_style_transfer(content_path,
-                       style_path,
+                       style_path, w, h,
                        num_iterations=1000,
                        content_weight=1e3,
                        style_weight=1e-2):
@@ -174,6 +174,11 @@ def run_style_transfer(content_path,
                   'style loss: {:.4e}, '
                   'content loss: {:.4e}, '
                   'time: {:.4f}s'.format(loss, style_score, content_score, time.time() - start_time))
+
+            image = Image.fromarray(best_img)
+            image = image.resize((w, h))
+            image.save("data/pictures/output/result{i}.jpg".format(i=i))
+
     print('Total time: {:.4f}s'.format(time.time() - global_start))
     plt.figure(figsize=(14, 4))
     for i, img in enumerate(imgs):
@@ -206,7 +211,7 @@ def main():
     imshow(style, 'Style Image')
     plt.show()
 
-    best, best_loss = run_style_transfer(content_path, style_path, num_iterations=1)
+    best, best_loss = run_style_transfer(content_path, style_path, num_iterations=3000, w=w, h=h)
 
     image = Image.fromarray(best)
     image = image.resize((w, h))
