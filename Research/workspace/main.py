@@ -28,17 +28,11 @@ checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_o
 
 
 model = Inception_resnet(input_shape=input_shape, alpha=alpha, num_classes=num_classes)
-model.compile(optimizer='Adam', loss='mse', metrics=['accuracy'])
+model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['accuracy'])
 print(model.summary())
 
 history = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, callbacks=[checkpoint], validation_split=0.2)
 model.save('data/inception_resnet/models/inception_resnet_cifar_10.h5')
-
-info = "Name: {name}\n Alpha: {alpha}\n Epochs: {epochs}\n " \
-       "Batchsize: {batch_size}\n Dataset: {dataset}\n Total params: 2 ml".format(name='Inception_resnet', alpha=alpha, epochs=epochs,
-                                                                                  batch_size=batch_size, dataset='Cifar10')
-with open("data/inception_resnet/info.txt", "w") as file:
-    file.write(info)
 
 eval = model.evaluate(x_test, y_test)
 print("Error rate: %.2f%%" % (100 - eval[1]*100), "\nAccuracy: %.2f%%" % (eval[1]*100))
@@ -51,7 +45,6 @@ plt.ylabel('accuracy')
 plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='upper left')
 plt.show()
-plt.savefig('data/inception_resnet/plots/model_accuracy.jpg')
 
 # summarize history for loss
 plt.plot(history.history['loss'])
@@ -61,4 +54,12 @@ plt.ylabel('loss')
 plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='upper left')
 plt.show()
-plt.savefig('data/inception_resnet/plots/model_loss.jpg')
+
+info = "Name: {name}\n Alpha: {alpha}\n Epochs: {epochs}\n " \
+       "Batchsize: {batch_size}\n Dataset: {dataset}\n Total params: 2 ml\n" \
+       "Test Accuracy: {accuracy}".format(name='Inception_resnet', alpha=alpha, epochs=epochs,
+                                          batch_size=batch_size, dataset='Cifar10', accuracy=(eval[1]*100))
+with open("data/inception_resnet/info.txt", "w") as file:
+    file.write(info)
+
+warning = input("SAVE PLOTS MANUALY!!!")

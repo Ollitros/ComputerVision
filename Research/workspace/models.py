@@ -75,9 +75,9 @@ def Inception_resnet(input_shape, num_classes, alpha=1.0):
 
         # Final part
         x = GlobalAveragePooling2D()(x)
+        x = BatchNormalization()(x)
         x = Flatten()(x)
         x = Dense(512, activation='relu')(x)
-        x = Dropout(0.25)(x)
         dense = Dense(num_classes, activation='softmax')(x)
 
         model = tf.keras.models.Model(inputs=[inputs], outputs=[dense])
