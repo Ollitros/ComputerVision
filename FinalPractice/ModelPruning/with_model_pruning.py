@@ -1,6 +1,6 @@
 import tensorflow as tf
-from tensorflow.python import keras
-from tensorflow.python.keras.layers import *
+import keras
+from keras.layers import *
 from tensorflow_model_optimization.python.core.sparsity.keras import prune
 from tensorflow_model_optimization.python.core.sparsity.keras import pruning_callbacks
 from tensorflow_model_optimization.python.core.sparsity.keras import pruning_schedule
@@ -38,7 +38,7 @@ def train_and_save(model, x_train, y_train, x_test, y_test):
     # step. Also add a callback to add pruning summaries to tensorboard
     callbacks = [
         pruning_callbacks.UpdatePruningStep(),
-        pruning_callbacks.PruningSummaries(log_dir="data")
+        pruning_callbacks.PruningSummaries(log_dir="data/")
     ]
 
     model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, verbose=1,
@@ -49,7 +49,7 @@ def train_and_save(model, x_train, y_train, x_test, y_test):
     print('Test accuracy:', score[1])
 
     # Export and import the model. Check that accuracy persists.
-    keras_file = 'data/model.h5'
+    keras_file = 'data/pruned_model.h5'
     print('Saving model to: ', keras_file)
     keras.models.save_model(model, keras_file)
     with prune.prune_scope():

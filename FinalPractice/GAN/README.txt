@@ -1,1 +1,0 @@
-This code particularly has stolen from different repos.
