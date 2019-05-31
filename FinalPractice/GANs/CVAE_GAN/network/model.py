@@ -29,12 +29,16 @@ class Gan:
 
         # Create combined
         noise = Input(shape=(self.latent_dim,))
+        real = Input(shape=(32, 32, 1))
         label = Input(shape=(1,))
-        img = self.generator([noise, label])
-        valid = self.discriminator([img, label])
+        fake = self.generator([noise, label, real])
+        valid = self.discriminator([fake, label])
 
-        self.combined = Model([noise, label], valid)
-        self.combined.compile(loss='binary_crossentropy', optimizer='Adam')
+        # Create custom loss
+        combined_loss = custom_loss(self.generator, noise, fake, real)
+
+        self.combined = Model([noise, label, real], valid)
+        self.combined.compile(loss=combined_loss, optimizer='Adam')
 
         # Model`s summaries
         self.encoder.summary()
@@ -51,6 +55,7 @@ class Gan:
 
         noise = Input(shape=(self.latent_dim,))
         label = Input(shape=(1,), dtype='int32')
+        real = Input(shape=(32, 32, 1))
         label_embedding = Flatten()(Embedding(self.num_classes, self.latent_dim)(label))
         model_input = multiply([noise, label_embedding])
 
@@ -79,7 +84,7 @@ class Gan:
         z_log_sigma = BatchNormalization()(dense_2)
         encoder_output = Lambda(self.sampling)([z_mean, z_log_sigma])
 
-        encoder = Model(inputs=[noise, label], outputs=encoder_output)
+        encoder = Model(inputs=[noise, label, real], outputs=encoder_output)
 
         # # #######################
         # # ## Build decoder
@@ -140,13 +145,13 @@ class Gan:
     def load_weights(self, path="data/models"):
         self.generator.load_weights("{path}/generator.h5".format(path=path))
         self.discriminator.load_weights("{path}/discriminator.h5".format(path=path))
-        self.combined.load_weights("{path}/combined.h5".format(path=path))
+        # self.combined.load_weights("{path}/combined.h5".format(path=path))
         print("Model weights files are successfully loaded.")
 
     def save_weights(self, path="data/models"):
         self.generator.save_weights("{path}/generator.h5".format(path=path))
         self.discriminator.save_weights("{path}/discriminator.h5".format(path=path))
-        self.combined.save_weights("{path}/combined.h5".format(path=path))
+        # self.combined.save_weights("{path}/combined.h5".format(path=path))
         print("Model weights files have been saved to {path}.".format(path=path))
 
 

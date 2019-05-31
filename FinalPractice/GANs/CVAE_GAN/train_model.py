@@ -10,7 +10,8 @@ def sample_images(model, epoch):
     sampled_labels = np.arange(0, 10).reshape(-1, 1)
 
     batch_noise = np.random.normal(0, 1, (10, 32 * 32 * 1))
-    prediction = model.generator.predict([batch_noise, sampled_labels])
+    useless = np.random.normal(0, 1, (10, 32, 32, 1))
+    prediction = model.generator.predict([batch_noise, sampled_labels, useless])
     prediction = np.float32(prediction * 255)
 
     image = cv.hconcat([prediction[0], prediction[1], prediction[2], prediction[3], prediction[4],
@@ -41,7 +42,7 @@ def test(input_shape, x, y):
 def train_model(input_shape, x, y, epochs, batch_size):
 
     model = Gan(input_shape=input_shape, num_classes=10)
-    model.load_weights()
+    # model.load_weights()
 
     sample_interval = 1
     t0 = time.time()
@@ -57,17 +58,18 @@ def train_model(input_shape, x, y, epochs, batch_size):
 
     for epoch in range(epochs):
 
-        # ---------------------
-        #  Train Discriminator
-        # ---------------------
-
         step = 0
         for iter in range(iters):
+
+            # ---------------------
+            #  Train Discriminator
+            # ---------------------
+
             # Sample noise as generator input
             noise = np.random.normal(0, 1, (batch_size, 32 * 32 * 1))
 
             # Generate a half batch of new images
-            gen_fake = model.generator.predict([noise, y[step: (step + batch_size)]])
+            gen_fake = model.generator.predict([noise, y[step: (step + batch_size)], train_x[step:(step + batch_size)]])
             gen_fake = np.reshape(gen_fake, (batch_size, 32, 32, 1))
 
             # Train the discriminator
@@ -75,28 +77,23 @@ def train_model(input_shape, x, y, epochs, batch_size):
             d_loss_fake = model.discriminator.train_on_batch([gen_fake, y[step:(step + batch_size)]], fake)
             d_loss = 0.5 * np.add(d_loss_real, d_loss_fake)
 
-            step = step + batch_size
-            if iter % 100 == 0:
-                print("Discriminator interior step", iter)
+            # ---------------------
+            #  Train Generator
+            # ---------------------
 
-        # ---------------------
-        #  Train Generator
-        # ---------------------
-
-        step = 0
-        for iter in range(iters):
             # Sample noise as generator input
             noise = np.random.normal(0, 1, (batch_size, 32 * 32 * 1))
 
-            g_loss = model.combined.train_on_batch([noise, y[step:(step + batch_size)]], valid)
+            g_loss = model.combined.train_on_batch([noise, y[step:(step + batch_size)], train_x[step:(step + batch_size)]], valid)
 
             step = step + batch_size
+
             if iter % 100 == 0:
-                print("Generator interior step", iter)
+                print("Interior step", iter)
 
         # Plot the progress
-        print("%d [D loss: %f, acc.: %.2f%%] [G loss: %f] --- time: %f" %
-              (epoch, d_loss[0], 100*d_loss[1], g_loss, time.time() - t0))
+        print("%d  ---- [D loss: %f, acc.: %.2f%%] [G loss: %f] --- time: %f" %
+             (epoch, d_loss[0], 100*d_loss[1], g_loss, time.time() - t0))
 
         # If at save interval => save generated image samples
         if epoch % sample_interval == 0:
@@ -120,7 +117,7 @@ def main():
 
     x = np.asarray(x_resized).astype('float32')
     x /= 255
-    epochs = 10
+    epochs = 5
     batch_size = 128
 
     # test(input_shape, x, y_train)
