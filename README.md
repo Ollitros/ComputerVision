@@ -1,1 +1,1 @@
-My implementations of popular algorithms in CV.
+My implementations of popular models and algorithms mainly in CV.
