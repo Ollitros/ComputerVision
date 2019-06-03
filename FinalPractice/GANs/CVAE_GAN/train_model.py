@@ -1,6 +1,7 @@
 import numpy as np
 import cv2 as cv
 import time
+import keras.backend as K
 from keras.datasets import mnist
 from FinalPractice.GANs.CVAE_GAN.network.model import Gan
 
@@ -12,7 +13,10 @@ def sample_images(model, epoch):
     batch_noise = np.random.normal(0, 1, (10, 32 * 32 * 1))
     useless = np.random.normal(0, 1, (10, 32, 32, 1))
     prediction = model.generator.predict([batch_noise, sampled_labels, useless])
-    prediction = np.float32(prediction * 255)
+
+    # Rescale images
+    # prediction = np.float32(prediction) * 127.5 + 127.5
+    prediction = np.float32(prediction) * 255
 
     image = cv.hconcat([prediction[0], prediction[1], prediction[2], prediction[3], prediction[4],
                         prediction[5],  prediction[6], prediction[7], prediction[8], prediction[9]])
@@ -26,9 +30,20 @@ def test(input_shape, x, y):
     model.load_weights()
 
     for i in range(100):
+        # useless = np.random.normal(0, 1, (10, 32, 32, 1))
+        # batch_noise = np.random.normal(0, 1, (1, 32 * 32 * 1))
+        # prediction = model.generator.predict([batch_noise, np.asarray([5]), useless])
+        # prediction = np.float32(prediction * 255)
+        #
+        # print(y[i])
+        # print(prediction.shape)
+        # cv.imwrite('data/{i}.jpg'.format(i=i), np.reshape(prediction, (32, 32, 1)))
+        # cv.imshow('asdasd', np.reshape(prediction, (32, 32, 1)))
+        # cv.waitKey(0)
+        # cv.destroyAllWindows()
 
-        batch_noise = np.random.normal(0, 1, (1, 32 * 32 * 1))
-        prediction = model.generator.predict([batch_noise, np.asarray([5])])
+        useless = np.random.normal(0, 1, (1, 4 * 4 * 128))
+        prediction = model.decoder.predict(useless)
         prediction = np.float32(prediction * 255)
 
         print(y[i])
@@ -117,7 +132,7 @@ def main():
 
     x = np.asarray(x_resized).astype('float32')
     x /= 255
-    epochs = 5
+    epochs = 10
     batch_size = 128
 
     # test(input_shape, x, y_train)

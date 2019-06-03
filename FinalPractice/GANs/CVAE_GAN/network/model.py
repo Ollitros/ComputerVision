@@ -8,7 +8,6 @@ class Gan:
     def __init__(self, input_shape, num_classes):
         self.lrD = 2e-4
         self.lrG = 1e-4
-        # Input shape
         self.img_shape = input_shape
         self.num_classes = num_classes
         self.latent_dim = input_shape[0] * input_shape[1] * input_shape[2]
@@ -17,34 +16,39 @@ class Gan:
         self.discriminator = self.build_discriminator()
         self.discriminator.compile(loss='binary_crossentropy', optimizer='Adam', metrics=['accuracy'])
 
-        # Build the generator
-        self.encoder, self.decoder = self.build_generator()
-        self.encoder_input = self.encoder.inputs
-        self.encode = self.encoder(self.encoder_input)
-        self.decode = self.decoder(self.encode)
-
-        self.generator = Model(self.encoder_input, self.decode)
-        self.discriminator.trainable = False
-        self.discriminator.compile(loss='binary_crossentropy', optimizer='Adam', metrics=['accuracy'])
-
-        # Create combined
+        # Inputs
         noise = Input(shape=(self.latent_dim,))
         real = Input(shape=(32, 32, 1))
         label = Input(shape=(1,))
+        encoder_input = [noise, label, real]
+
+        # Build encoder and decoder
+        self.encoder, self.decoder = self.build_generator()
+        z_mean, z_log_sigma, encode = self.encoder(encoder_input)
+        decoder_output = self.decoder(encode)
+
+        # Create generator model
+        self.generator = Model(encoder_input, decoder_output)
+        self.discriminator.trainable = False
+        self.discriminator.compile(loss='binary_crossentropy', optimizer='Adam', metrics=['accuracy'])
+
+        # Create model outputs tensors
         fake = self.generator([noise, label, real])
         valid = self.discriminator([fake, label])
 
-        # Create custom loss
-        combined_loss = custom_loss(self.generator, noise, fake, real)
+        # Create custom loss for combined model
+        combined_loss = custom_loss(self.generator, fake, real, z_mean, z_log_sigma)
 
+        # Create combined model
         self.combined = Model([noise, label, real], valid)
         self.combined.compile(loss=combined_loss, optimizer='Adam')
 
-        # Model`s summaries
-        self.encoder.summary()
-        self.decoder.summary()
-        self.generator.summary()
-        self.combined.summary()
+        # Print model`s summaries
+        print(self.encoder.summary())
+        print(self.decoder.summary())
+        print(self.generator.summary())
+        print(self.discriminator.summary())
+        print(self.combined.summary())
 
     def sampling(self, args):
         z_mean, z_log_sigma = args
@@ -80,11 +84,11 @@ class Gan:
 
         # Latent Variable Calculation
         z_mean = BatchNormalization()(x)
-        dense_2 = Dense(4 * 4 * 128, name='z_log_sigma')(z_mean)
+        dense_2 = Dense(4 * 4 * 128, name='z_log_sigma', activation='tanh')(x)
         z_log_sigma = BatchNormalization()(dense_2)
         encoder_output = Lambda(self.sampling)([z_mean, z_log_sigma])
 
-        encoder = Model(inputs=[noise, label, real], outputs=encoder_output)
+        encoder = Model(inputs=[noise, label, real], outputs=[z_mean, z_log_sigma, encoder_output])
 
         # # #######################
         # # ## Build decoder
@@ -138,7 +142,6 @@ class Gan:
         x = Dense(1, activation='sigmoid')(x)
 
         model = Model([img, label], x)
-        model.summary()
 
         return model
 

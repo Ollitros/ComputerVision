@@ -11,7 +11,7 @@ import numpy as np
 """
 
 
-def custom_loss(generator, noise, fake, real):
+def custom_loss(generator, fake, real, z_mean, z_log_sigma):
     def loss(y_true, y_pred):
 
         # Reconstruction loss
@@ -20,11 +20,14 @@ def custom_loss(generator, noise, fake, real):
         # Edge loss
         loss_E = edge_loss(real, fake)
 
+        # KL loss
+        kl_loss = - 0.5 * K.sum(1 + z_log_sigma - K.square(z_mean) - K.exp(z_log_sigma), axis=-1)
+
         # Binary crossentropy loss
         bc = binary_crossentropy(y_true, y_pred)
 
         # Total loss
-        total_loss = K.mean(loss_E + loss_R + bc)
+        total_loss = K.mean(loss_R + loss_E + kl_loss + bc)
 
         return total_loss
 
