@@ -36,12 +36,13 @@ class Gan:
         fake = self.generator([noise, label, real])
         valid = self.discriminator([fake, label])
 
-        # Create custom loss for combined model
-        combined_loss = custom_loss(self.generator, fake, real, z_mean, z_log_sigma)
+        # Create custom loss for generator model
+        generator_loss = custom_loss(self.generator, fake, real, z_mean, z_log_sigma)
+        self.generator.compile(loss=generator_loss, optimizer='Adam')
 
         # Create combined model
         self.combined = Model([noise, label, real], valid)
-        self.combined.compile(loss=combined_loss, optimizer='Adam')
+        self.combined.compile(loss='binary_crossentropy', optimizer='Adam')
 
         # Print model`s summaries
         print(self.encoder.summary())
@@ -96,9 +97,9 @@ class Gan:
 
         decoder_input = Input(shape=(4 * 4 * 128, ))
         x = Reshape((4, 4, 128))(decoder_input)
-        x = upscale(64)(x)
-        x = upscale(64)(x)
-        x = self_attn_block(x, 64)
+        x = upscale(128)(x)
+        x = upscale(128)(x)
+        x = self_attn_block(x, 128)
         x = upscale(64)(x)
         x = res_block(x, 64)
         x = self_attn_block(x, 64)
@@ -126,18 +127,18 @@ class Gan:
         model_input = multiply([flat_img, label_embedding])
 
         x = Reshape((32, 32, 1))(model_input)
-        x = dis_layer(x, 64)
         x = dis_layer(x, 128)
         x = dis_layer(x, 256)
-        x = self_attn_block(x, 256)
+        x = dis_layer(x, 512)
+        x = self_attn_block(x, 512)
 
         activ_map_size = self.img_shape[0] // 8
         while activ_map_size > 8:
-            x = dis_layer(x, 256)
-            x = self_attn_block(x, 256)
+            x = dis_layer(x, 512)
+            x = self_attn_block(x, 512)
             activ_map_size = activ_map_size // 2
 
-        x = Conv2D(32, kernel_size=3, padding="same")(x)
+        x = Conv2D(64, kernel_size=3, padding="same")(x)
         x = Flatten()(x)
         x = Dense(1, activation='sigmoid')(x)
 

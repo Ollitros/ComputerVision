@@ -23,11 +23,8 @@ def custom_loss(generator, fake, real, z_mean, z_log_sigma):
         # KL loss
         kl_loss = - 0.5 * K.sum(1 + z_log_sigma - K.square(z_mean) - K.exp(z_log_sigma), axis=-1)
 
-        # Binary crossentropy loss
-        bc = binary_crossentropy(y_true, y_pred)
-
         # Total loss
-        total_loss = K.mean(loss_R + loss_E + kl_loss + bc)
+        total_loss = K.mean(loss_R + loss_E + kl_loss)
 
         return total_loss
 

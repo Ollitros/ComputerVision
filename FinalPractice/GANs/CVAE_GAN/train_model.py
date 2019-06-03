@@ -98,8 +98,15 @@ def train_model(input_shape, x, y, epochs, batch_size):
 
             # Sample noise as generator input
             noise = np.random.normal(0, 1, (batch_size, 32 * 32 * 1))
+            g_loss = model.generator.train_on_batch([noise, y[step:(step + batch_size)], train_x[step:(step + batch_size)]], valid)
 
-            g_loss = model.combined.train_on_batch([noise, y[step:(step + batch_size)], train_x[step:(step + batch_size)]], valid)
+            # ---------------------
+            #  Train Combined
+            # ---------------------
+
+            # Sample noise as generator input
+            noise = np.random.normal(0, 1, (batch_size, 32 * 32 * 1))
+            c_loss = model.combined.train_on_batch([noise, y[step:(step + batch_size)], train_x[step:(step + batch_size)]], valid)
 
             step = step + batch_size
 
@@ -107,8 +114,8 @@ def train_model(input_shape, x, y, epochs, batch_size):
                 print("Interior step", iter)
 
         # Plot the progress
-        print("%d  ---- [D loss: %f, acc.: %.2f%%] [G loss: %f] --- time: %f" %
-             (epoch, d_loss[0], 100*d_loss[1], g_loss, time.time() - t0))
+        print("%d  ---- [D loss: %f, acc.: %.2f%%] [G loss: %f] [C loss: %f] --- time: %f" %
+             (epoch, d_loss[0], 100*d_loss[1], g_loss, c_loss, time.time() - t0))
 
         # If at save interval => save generated image samples
         if epoch % sample_interval == 0:
