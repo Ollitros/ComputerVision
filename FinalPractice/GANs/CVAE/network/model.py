@@ -1,6 +1,6 @@
 from keras.models import Model
-from FinalPractice.GANs.CVAE_GAN.network.custom_blocks import *
-from FinalPractice.GANs.CVAE_GAN.network.losses import *
+from FinalPractice.GANs.CVAE.network.custom_blocks import *
+from FinalPractice.GANs.CVAE.network.losses import *
 
 
 class Gan:
@@ -11,10 +11,6 @@ class Gan:
         self.img_shape = input_shape
         self.num_classes = num_classes
         self.latent_dim = input_shape[0] * input_shape[1] * input_shape[2]
-
-        # Build and compile the discriminator
-        self.discriminator = self.build_discriminator()
-        self.discriminator.compile(loss='binary_crossentropy', optimizer='Adam', metrics=['accuracy'])
 
         # Inputs
         noise = Input(shape=(self.latent_dim,))
@@ -29,8 +25,6 @@ class Gan:
 
         # Create generator model
         self.generator = Model(encoder_input, decoder_output)
-        self.discriminator.trainable = False
-        self.discriminator.compile(loss='binary_crossentropy', optimizer='Adam', metrics=['accuracy'])
 
         # Create model outputs tensors
         fake = self.generator([noise, label, real])
@@ -39,19 +33,10 @@ class Gan:
         generator_loss = custom_loss(self.generator, fake, real, z_mean, z_log_sigma)
         self.generator.compile(loss=generator_loss, optimizer='Adam')
 
-        # Create combined model
-        decoder_input = Input(shape=(4 * 4 * 128, ))
-        fake_combined = self.decoder(decoder_input)
-        valid_combined = self.discriminator([fake_combined, label])
-        self.combined = Model([decoder_input, label], valid_combined)
-        self.combined.compile(loss='binary_crossentropy', optimizer='Adam')
-
         # Print model`s summaries
         print(self.encoder.summary())
         print(self.decoder.summary())
         print(self.generator.summary())
-        print(self.discriminator.summary())
-        print(self.combined.summary())
 
     def sampling(self, args):
         z_mean, z_log_sigma = args
@@ -121,44 +106,14 @@ class Gan:
 
         return encoder, decoder
 
-    def build_discriminator(self):
-
-        img = Input(shape=(32, 32, 1))
-        label = Input(shape=(1,), dtype='int32')
-        label_embedding = Flatten()(Embedding(self.num_classes, np.prod((32, 32, 1)))(label))
-        flat_img = Flatten()(img)
-        model_input = multiply([flat_img, label_embedding])
-
-        x = Reshape((32, 32, 1))(model_input)
-        x = dis_layer(x, 128)
-        x = dis_layer(x, 256)
-        x = dis_layer(x, 512)
-        x = self_attn_block(x, 512)
-
-        activ_map_size = self.img_shape[0] // 8
-        while activ_map_size > 8:
-            x = dis_layer(x, 512)
-            x = self_attn_block(x, 512)
-            activ_map_size = activ_map_size // 2
-
-        x = Conv2D(64, kernel_size=3, padding="same")(x)
-        x = Flatten()(x)
-        x = Dense(1, activation='sigmoid')(x)
-
-        model = Model([img, label], x)
-
-        return model
-
     def load_weights(self, path="data/models"):
         self.generator.load_weights("{path}/generator.h5".format(path=path))
-        self.discriminator.load_weights("{path}/discriminator.h5".format(path=path))
         self.decoder.save_weights("{path}/decoder.h5".format(path=path))
         self.encoder.save_weights("{path}/encoder.h5".format(path=path))
         print("Model weights files are successfully loaded.")
 
     def save_weights(self, path="data/models"):
         self.generator.save_weights("{path}/generator.h5".format(path=path))
-        self.discriminator.save_weights("{path}/discriminator.h5".format(path=path))
         self.decoder.save_weights("{path}/decoder.h5".format(path=path))
         self.encoder.save_weights("{path}/encoder.h5".format(path=path))
         print("Model weights files have been saved to {path}.".format(path=path))

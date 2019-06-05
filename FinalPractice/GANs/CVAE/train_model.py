@@ -3,7 +3,7 @@ import cv2 as cv
 import time
 import keras.backend as K
 from keras.datasets import mnist
-from FinalPractice.GANs.CVAE_GAN.network.model import Gan
+from FinalPractice.GANs.CVAE.network.model import Gan
 
 
 def sample_images(model, epoch):
@@ -65,34 +65,11 @@ def train_model(input_shape, x, y, epochs, batch_size):
         train_x.append(train_x[-1])
     train_x = np.asarray(x)
     train_x = np.reshape(train_x, (train_x.shape[0], 32, 32, 1))
-
     valid = np.ones((batch_size, 1))
-    fake = np.zeros((batch_size, 1))
-
     for epoch in range(epochs):
 
         step = 0
         for iter in range(iters):
-
-            # ---------------------
-            #  Train Discriminator
-            # ---------------------
-
-            # Sample noise as generator input
-            noise = np.random.normal(0, 1, (batch_size, 4 * 4 * 128))
-
-            # Generate a half batch of new images
-            latent_vect = model.encoder.predict([np.reshape(train_x[step:(step + batch_size)], (128, 32 * 32 * 1)),
-                                                y[step:(step + batch_size)],
-                                                train_x[step:(step + batch_size)]])
-            encodeImg = model.decoder.predict(latent_vect[2])
-            fake_gen = model.decoder.predict(noise)
-
-            # Train the discriminator
-            d_loss_real_1 = model.discriminator.train_on_batch([train_x[step:(step + batch_size)], y[step:(step + batch_size)]], valid)
-            d_loss_real_2 = model.discriminator.train_on_batch([encodeImg, y[step:(step + batch_size)]], valid)
-            d_loss_fake = model.discriminator.train_on_batch([fake_gen, y[step:(step + batch_size)]], fake)
-            d_loss = 0.5 * np.add(np.add(d_loss_real_1, d_loss_real_2) * 0.5, d_loss_fake)
 
             # ---------------------
             #  Train Generator
@@ -101,33 +78,20 @@ def train_model(input_shape, x, y, epochs, batch_size):
             # Sample noise as generator input
             g_loss = model.generator.train_on_batch([np.reshape(train_x[step:(step + batch_size)], (128, 32 * 32 * 1)),
                                                      y[step:(step + batch_size)],
-                                                     train_x[step:(step + batch_size)]], valid)
-
-            # ---------------------
-            #  Train Combined
-            # ---------------------
-
-            # Sample noise as generator input
-            noise = np.random.normal(0, 1, (batch_size, 4 * 4 * 128))
-            latent_vect = model.encoder.predict([np.reshape(train_x[step:(step + batch_size)], (128, 32 * 32 * 1)),
-                                                 y[step:(step + batch_size)],
-                                                 train_x[step:(step + batch_size)]])
-
-            c_loss_1 = model.combined.train_on_batch([noise, y[step:(step + batch_size)]], valid)
-            c_loss_2 = model.combined.train_on_batch([latent_vect[2], y[step:(step + batch_size)]], valid)
-
+                                                     train_x[step:(step + batch_size)]],
+                                                     valid)
             step = step + batch_size
 
             if iter % 100 == 0:
                 print("Interior step", iter)
 
         # Plot the progress
-        print("%d  ---- [D loss: %f, acc.: %.2f%%] [G loss: %f] [C loss: %f] --- time: %f" %
-             (epoch, d_loss[0], 100*d_loss[1], g_loss, c_loss_1 + c_loss_2, time.time() - t0))
+        print("%d  ----  [G loss: %f]  --- time: %f" %
+             (epoch, g_loss,  time.time() - t0))
 
         # If at save interval => save generated image samples
         if epoch % sample_interval == 0:
-            sample_images(model, epoch + 2)
+            sample_images(model, epoch + 10)
 
         model.save_weights()
 
@@ -147,7 +111,7 @@ def main():
 
     x = np.asarray(x_resized).astype('float32')
     x /= 255
-    epochs = 3
+    epochs = 30
     batch_size = 128
 
     # x = x[0:1000]
