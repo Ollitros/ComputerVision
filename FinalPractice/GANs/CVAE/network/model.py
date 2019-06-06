@@ -2,6 +2,7 @@ from keras.models import Model
 from keras.optimizers import Adam
 from FinalPractice.GANs.CVAE.network.custom_blocks import *
 from FinalPractice.GANs.CVAE.network.losses import *
+import tensorflow as tf
 
 
 class Gan:
@@ -12,7 +13,9 @@ class Gan:
         self.img_shape = input_shape
         self.num_classes = num_classes
         self.latent_dim = input_shape[0] * input_shape[1] * input_shape[2]
+        assert (latent / (2 * 2)) >= 1
         self.latent = latent
+        self.latent_channels = int(self.latent / (2 * 2))
         self.batch_size = batch_size
 
         adam = Adam(lr=0.0002, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
@@ -90,8 +93,10 @@ class Gan:
         # # #######################
 
         decoder_input = Input(shape=(self.latent, ))
-        x = Reshape((4, 4, (self.latent / (4 * 4))))(decoder_input)
+        x = Reshape((2, 2, self.latent_channels))(decoder_input)
+        x = upscale(128)(x)
         x = upscale(256)(x)
+        x = self_attn_block(x, 256)
         x = upscale(256)(x)
         x = self_attn_block(x, 256)
         x = upscale(128)(x)

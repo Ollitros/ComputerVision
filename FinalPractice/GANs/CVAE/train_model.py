@@ -44,7 +44,7 @@ def test(input_shape, x, y):
 def train_model(input_shape, x, y, epochs, batch_size, latent):
 
     model = Gan(input_shape=input_shape, num_classes=10, batch_size=batch_size, latent=latent)
-    model.load_weights()
+    # model.load_weights()
 
     sample_interval = 1
     t0 = time.time()
@@ -80,7 +80,7 @@ def train_model(input_shape, x, y, epochs, batch_size, latent):
 
         # If at save interval => save generated image samples
         if epoch % sample_interval == 0:
-            sample_images(model, epoch + 10, latent)
+            sample_images(model, epoch + 0, latent)
 
         model.save_weights()
 
@@ -102,10 +102,8 @@ def main():
     x /= 255
     epochs = 10
     batch_size = 64
-    latent = 16
+    latent = 8
 
-    # x = x[0:1000]
-    # y_train = y_train[0:1000]
     # test(input_shape, x, y_train)
     train_model(input_shape=input_shape, x=x, y=y_train, epochs=epochs, batch_size=batch_size, latent=latent)
 
