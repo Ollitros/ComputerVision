@@ -1,16 +1,21 @@
 from keras.models import Model
+from keras.optimizers import Adam
 from FinalPractice.GANs.CVAE.network.custom_blocks import *
 from FinalPractice.GANs.CVAE.network.losses import *
 
 
 class Gan:
 
-    def __init__(self, input_shape, num_classes):
+    def __init__(self, input_shape, num_classes, batch_size, latent):
         self.lrD = 2e-4
         self.lrG = 1e-4
         self.img_shape = input_shape
         self.num_classes = num_classes
         self.latent_dim = input_shape[0] * input_shape[1] * input_shape[2]
+        self.latent = latent
+        self.batch_size = batch_size
+
+        adam = Adam(lr=0.0002, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
 
         # Inputs
         noise = Input(shape=(self.latent_dim,))
@@ -30,8 +35,8 @@ class Gan:
         fake = self.generator([noise, label, real])
 
         # Create custom loss for generator model
-        generator_loss = custom_loss(self.generator, fake, real, z_mean, z_log_sigma)
-        self.generator.compile(loss=generator_loss, optimizer='Adam')
+        generator_loss = custom_loss(self.generator, fake, real, z_mean, z_log_sigma, self.batch_size)
+        self.generator.compile(loss=generator_loss, optimizer=adam)
 
         # Print model`s summaries
         print(self.encoder.summary())
@@ -40,9 +45,8 @@ class Gan:
 
     def sampling(self, args):
         z_mean, z_log_sigma = args
-        epsilon = K.random_normal(shape=(4 * 4 * 128,), mean=0, stddev=1)
-        sampled = z_mean + K.exp(z_log_sigma / 2) * epsilon
-        return sampled
+        epsilon = K.random_normal(shape=(K.shape(z_mean)[0], self.latent), mean=0., stddev=1.0)
+        return z_mean + K.exp(z_log_sigma / 2) * epsilon
 
     def build_generator(self):
 
@@ -56,26 +60,28 @@ class Gan:
         # # ## Build encoder
         # # #######################
         x = Reshape((32, 32, 1))(model_input)
-        x = Conv2D(32, kernel_size=5, use_bias=False, padding="same")(x)
-        x = conv_block(64)(x)
-        x = self_attn_block(x, 64)
-        x = conv_block(64)(x)
-        x = self_attn_block(x, 64)
-        x = conv_block(64)(x)
+        x = Conv2D(64, kernel_size=5, use_bias=False, padding="same")(x)
+        x = conv_block(128)(x)
+        x = self_attn_block(x, 128)
+        x = conv_block(256)(x)
+        x = self_attn_block(x, 256)
+        x = conv_block(256)(x)
 
         activ_map_size = self.img_shape[0] // 16
         while activ_map_size > 4:
-            x = conv_block(64)(x)
+            x = conv_block(256)(x)
             activ_map_size = activ_map_size // 2
 
-        x = Dense(128)(Flatten()(x))
-        x = Dense(4 * 4 * 128)(x)
-
         # Latent Variable Calculation
-        z_mean = BatchNormalization()(x)
-        dense_2 = Dense(4 * 4 * 128, name='z_log_sigma', activation='tanh')(x)
-        z_log_sigma = BatchNormalization()(dense_2)
-        encoder_output = Lambda(self.sampling)([z_mean, z_log_sigma])
+        flatten_mean = Flatten()(x)
+        dense_mean = Dense(self.latent)(flatten_mean)
+        z_mean = BatchNormalization()(dense_mean)
+
+        flatten_sigma = Flatten()(x)
+        dense_sigma = Dense(self.latent)(flatten_sigma)
+        z_log_sigma = BatchNormalization()(dense_sigma)
+
+        encoder_output = Lambda(self.sampling, output_shape=(self.latent,))([z_mean, z_log_sigma])
 
         encoder = Model(inputs=[noise, label, real], outputs=[z_mean, z_log_sigma, encoder_output])
 
@@ -83,21 +89,21 @@ class Gan:
         # # ## Build decoder
         # # #######################
 
-        decoder_input = Input(shape=(4 * 4 * 128, ))
-        x = Reshape((4, 4, 128))(decoder_input)
+        decoder_input = Input(shape=(self.latent, ))
+        x = Reshape((4, 4, (self.latent / (4 * 4))))(decoder_input)
+        x = upscale(256)(x)
+        x = upscale(256)(x)
+        x = self_attn_block(x, 256)
         x = upscale(128)(x)
-        x = upscale(128)(x)
+        x = res_block(x, 128)
         x = self_attn_block(x, 128)
-        x = upscale(64)(x)
-        x = res_block(x, 64)
-        x = self_attn_block(x, 64)
 
         outputs = []
         activ_map_size = self.img_shape[0] * 8
         while activ_map_size < 128:
             outputs.append(Conv2D(3, kernel_size=5, padding='same', activation="tanh")(x))
-            x = upscale(64)(x)
-            x = conv_block(64, strides=1)(x)
+            x = upscale(128)(x)
+            x = conv_block(128, strides=1)(x)
             activ_map_size *= 2
 
         x = Conv2D(1, kernel_size=3, padding='same', activation="tanh")(x)

@@ -6,11 +6,11 @@ from keras.datasets import mnist
 from FinalPractice.GANs.CVAE.network.model import Gan
 
 
-def sample_images(model, epoch):
+def sample_images(model, epoch, latent):
 
     sampled_labels = np.arange(0, 10).reshape(-1, 1)
 
-    batch_noise = np.random.normal(0, 1, (10, 4 * 4 * 128))
+    batch_noise = np.random.normal(0, 1, (10, latent))
     prediction = model.decoder.predict([batch_noise])
 
     # Rescale images
@@ -28,19 +28,8 @@ def test(input_shape, x, y):
     model.load_weights()
 
     for i in range(100):
-        # useless = np.random.normal(0, 1, (10, 32, 32, 1))
-        # batch_noise = np.random.normal(0, 1, (1, 32 * 32 * 1))
-        # prediction = model.generator.predict([batch_noise, np.asarray([5]), useless])
-        # prediction = np.float32(prediction * 255)
-        #
-        # print(y[i])
-        # print(prediction.shape)
-        # cv.imwrite('data/{i}.jpg'.format(i=i), np.reshape(prediction, (32, 32, 1)))
-        # cv.imshow('asdasd', np.reshape(prediction, (32, 32, 1)))
-        # cv.waitKey(0)
-        # cv.destroyAllWindows()
 
-        useless = np.random.normal(0, 1, (1, 4 * 4 * 128))
+        useless = np.random.normal(0, 1, (1, 256))
         prediction = model.decoder.predict(useless)
         prediction = np.float32(prediction * 255)
 
@@ -52,9 +41,9 @@ def test(input_shape, x, y):
         cv.destroyAllWindows()
 
 
-def train_model(input_shape, x, y, epochs, batch_size):
+def train_model(input_shape, x, y, epochs, batch_size, latent):
 
-    model = Gan(input_shape=input_shape, num_classes=10)
+    model = Gan(input_shape=input_shape, num_classes=10, batch_size=batch_size, latent=latent)
     model.load_weights()
 
     sample_interval = 1
@@ -76,7 +65,7 @@ def train_model(input_shape, x, y, epochs, batch_size):
             # ---------------------
 
             # Sample noise as generator input
-            g_loss = model.generator.train_on_batch([np.reshape(train_x[step:(step + batch_size)], (128, 32 * 32 * 1)),
+            g_loss = model.generator.train_on_batch([np.reshape(train_x[step:(step + batch_size)], (batch_size, 32 * 32 * 1)),
                                                      y[step:(step + batch_size)],
                                                      train_x[step:(step + batch_size)]],
                                                      valid)
@@ -91,7 +80,7 @@ def train_model(input_shape, x, y, epochs, batch_size):
 
         # If at save interval => save generated image samples
         if epoch % sample_interval == 0:
-            sample_images(model, epoch + 10)
+            sample_images(model, epoch + 10, latent)
 
         model.save_weights()
 
@@ -111,13 +100,14 @@ def main():
 
     x = np.asarray(x_resized).astype('float32')
     x /= 255
-    epochs = 30
-    batch_size = 128
+    epochs = 10
+    batch_size = 64
+    latent = 16
 
     # x = x[0:1000]
     # y_train = y_train[0:1000]
     # test(input_shape, x, y_train)
-    train_model(input_shape=input_shape, x=x, y=y_train, epochs=epochs, batch_size=batch_size)
+    train_model(input_shape=input_shape, x=x, y=y_train, epochs=epochs, batch_size=batch_size, latent=latent)
 
 
 if __name__ == '__main__':
