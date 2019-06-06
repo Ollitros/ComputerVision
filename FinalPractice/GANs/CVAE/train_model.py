@@ -22,21 +22,21 @@ def sample_images(model, epoch, latent):
     cv.imwrite('data/images/{step}.jpg'.format(step=epoch), image)
 
 
-def test(input_shape, x, y):
+def test(input_shape, x, y, batch_size, latent):
 
-    model = Gan(input_shape=input_shape, num_classes=10)
+    model = Gan(input_shape=input_shape, num_classes=10, batch_size=batch_size, latent=latent)
     model.load_weights()
 
     for i in range(100):
 
-        useless = np.random.normal(0, 1, (1, 256))
+        useless = np.random.normal(0, 1, (1, latent))
         prediction = model.decoder.predict(useless)
         prediction = np.float32(prediction * 255)
 
         print(y[i])
         print(prediction.shape)
-        cv.imwrite('data/{i}.jpg'.format(i=i), np.reshape(prediction, (32, 32, 1)))
-        cv.imshow('asdasd', np.reshape(prediction, (32, 32, 1)))
+        cv.imwrite('data/{i}.jpg'.format(i=i), np.reshape(prediction, input_shape))
+        cv.imshow('asdasd', np.reshape(prediction, input_shape))
         cv.waitKey(0)
         cv.destroyAllWindows()
 
@@ -44,7 +44,7 @@ def test(input_shape, x, y):
 def train_model(input_shape, x, y, epochs, batch_size, latent):
 
     model = Gan(input_shape=input_shape, num_classes=10, batch_size=batch_size, latent=latent)
-    # model.load_weights()
+    model.load_weights()
 
     sample_interval = 1
     t0 = time.time()
@@ -53,7 +53,7 @@ def train_model(input_shape, x, y, epochs, batch_size, latent):
         train_x = x.tolist()
         train_x.append(train_x[-1])
     train_x = np.asarray(x)
-    train_x = np.reshape(train_x, (train_x.shape[0], 32, 32, 1))
+    train_x = np.reshape(train_x, (train_x.shape[0], input_shape[0], input_shape[1], input_shape[2]))
     valid = np.ones((batch_size, 1))
     for epoch in range(epochs):
 
@@ -65,7 +65,10 @@ def train_model(input_shape, x, y, epochs, batch_size, latent):
             # ---------------------
 
             # Sample noise as generator input
-            g_loss = model.generator.train_on_batch([np.reshape(train_x[step:(step + batch_size)], (batch_size, 32 * 32 * 1)),
+            g_loss = model.generator.train_on_batch([np.reshape(train_x[step:(step + batch_size)], (batch_size,
+                                                                                                    input_shape[0] *
+                                                                                                    input_shape[1] *
+                                                                                                    input_shape[2])),
                                                      y[step:(step + batch_size)],
                                                      train_x[step:(step + batch_size)]],
                                                      valid)
@@ -80,7 +83,7 @@ def train_model(input_shape, x, y, epochs, batch_size, latent):
 
         # If at save interval => save generated image samples
         if epoch % sample_interval == 0:
-            sample_images(model, epoch + 0, latent)
+            sample_images(model, epoch + 10, latent)
 
         model.save_weights()
 
@@ -104,7 +107,7 @@ def main():
     batch_size = 64
     latent = 8
 
-    # test(input_shape, x, y_train)
+    # test(input_shape=input_shape, x=x, y=y_train, epochs=epochs, batch_size=batch_size, latent=latent)
     train_model(input_shape=input_shape, x=x, y=y_train, epochs=epochs, batch_size=batch_size, latent=latent)
 
 

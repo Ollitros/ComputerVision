@@ -2,7 +2,6 @@ from keras.models import Model
 from keras.optimizers import Adam
 from FinalPractice.GANs.CVAE.network.custom_blocks import *
 from FinalPractice.GANs.CVAE.network.losses import *
-import tensorflow as tf
 
 
 class Gan:
@@ -22,7 +21,7 @@ class Gan:
 
         # Inputs
         noise = Input(shape=(self.latent_dim,))
-        real = Input(shape=(32, 32, 1))
+        real = Input(shape=self.img_shape)
         label = Input(shape=(1,))
         encoder_input = [noise, label, real]
 
@@ -38,7 +37,7 @@ class Gan:
         fake = self.generator([noise, label, real])
 
         # Create custom loss for generator model
-        generator_loss = custom_loss(self.generator, fake, real, z_mean, z_log_sigma, self.batch_size)
+        generator_loss = custom_loss(self.generator, fake, real, z_mean, z_log_sigma, self.batch_size, self.img_shape)
         self.generator.compile(loss=generator_loss, optimizer=adam)
 
         # Print model`s summaries
@@ -55,14 +54,14 @@ class Gan:
 
         noise = Input(shape=(self.latent_dim,))
         label = Input(shape=(1,), dtype='int32')
-        real = Input(shape=(32, 32, 1))
+        real = Input(shape=self.img_shape)
         label_embedding = Flatten()(Embedding(self.num_classes, self.latent_dim)(label))
         model_input = multiply([noise, label_embedding])
 
         # # #######################
         # # ## Build encoder
         # # #######################
-        x = Reshape((32, 32, 1))(model_input)
+        x = Reshape(self.img_shape)(model_input)
         x = Conv2D(64, kernel_size=5, use_bias=False, padding="same")(x)
         x = conv_block(128)(x)
         x = self_attn_block(x, 128)
@@ -111,7 +110,7 @@ class Gan:
             x = conv_block(128, strides=1)(x)
             activ_map_size *= 2
 
-        x = Conv2D(1, kernel_size=3, padding='same', activation="tanh")(x)
+        x = Conv2D(self.img_shape[2], kernel_size=3, padding='same', activation="tanh")(x)
 
         decoder = Model(inputs=decoder_input, outputs=x)
 

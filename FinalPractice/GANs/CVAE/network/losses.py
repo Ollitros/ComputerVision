@@ -11,14 +11,14 @@ import numpy as np
 """
 
 
-def custom_loss(generator, fake, real, z_mean, z_log_sigma, batch_size):
+def custom_loss(generator, fake, real, z_mean, z_log_sigma, batch_size, img_shape):
     def loss(y_true, y_pred):
 
         # Reconstruction loss
         loss_R = reconstruction_loss(generator, real, fake)
 
         # Edge loss
-        loss_E = edge_loss(real, fake, batch_size)
+        loss_E = edge_loss(real, fake, batch_size, img_shape)
 
         # KL loss
         kl_loss = - 0.5 * K.sum(1 + z_log_sigma - K.square(z_mean) - K.exp(z_log_sigma), axis=-1)
@@ -67,11 +67,11 @@ def reconstruction_loss(generator, real, fake):
     return loss_G
 
 
-def edge_loss(real, fake, batch_size):
+def edge_loss(real, fake, batch_size, img_shape):
 
     # Edge loss
-    gen_inputs = tf.reshape(real, (batch_size, 32, 32, 1))
-    gen_outputs = tf.reshape(fake, (batch_size, 32, 32, 1))
+    gen_inputs = tf.reshape(real, (batch_size, img_shape[0], img_shape[1], img_shape[2]))
+    gen_outputs = tf.reshape(fake, (batch_size, img_shape[0], img_shape[1], img_shape[2]))
 
     loss_G = 0
     loss_G += 0.1 * calc_loss(first_order(gen_outputs, axis=1), first_order(gen_inputs, axis=1), "l1")
