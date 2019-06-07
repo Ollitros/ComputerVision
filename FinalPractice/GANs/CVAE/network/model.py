@@ -6,7 +6,7 @@ from FinalPractice.GANs.CVAE.network.losses import *
 
 class Gan:
 
-    def __init__(self, input_shape, num_classes, batch_size, latent):
+    def __init__(self, input_shape, num_classes, batch_size, latent, filter_coeff):
         self.lrD = 2e-4
         self.lrG = 1e-4
         self.img_shape = input_shape
@@ -16,6 +16,7 @@ class Gan:
         self.latent = latent
         self.latent_channels = int(self.latent / (2 * 2))
         self.batch_size = batch_size
+        self.filter_coeff = filter_coeff
 
         adam = Adam(lr=0.0002, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
 
@@ -28,7 +29,7 @@ class Gan:
         # Build encoder and decoder
         self.encoder, self.decoder = self.build_generator()
         z_mean, z_log_sigma, encode = self.encoder(encoder_input)
-        decoder_output = self.decoder(encode)
+        decoder_output = self.decoder([encode, label])
 
         # Create generator model
         self.generator = Model(encoder_input, decoder_output)
@@ -52,26 +53,28 @@ class Gan:
 
     def build_generator(self):
 
+        # # #######################
+        # # ## Build encoder
+        # # #######################
+
         noise = Input(shape=(self.latent_dim,))
         label = Input(shape=(1,), dtype='int32')
         real = Input(shape=self.img_shape)
         label_embedding = Flatten()(Embedding(self.num_classes, self.latent_dim)(label))
-        model_input = multiply([noise, label_embedding])
+        model_input = concatenate([noise, label_embedding])
+        x = Dense(self.latent_dim)(model_input)
 
-        # # #######################
-        # # ## Build encoder
-        # # #######################
-        x = Reshape(self.img_shape)(model_input)
-        x = Conv2D(64, kernel_size=5, use_bias=False, padding="same")(x)
-        x = conv_block(128)(x)
-        x = self_attn_block(x, 128)
-        x = conv_block(256)(x)
-        x = self_attn_block(x, 256)
-        x = conv_block(256)(x)
+        x = Reshape(self.img_shape)(x)
+        x = Conv2D(int(64 * self.filter_coeff), kernel_size=5, use_bias=False, padding="same")(x)
+        x = conv_block(int(128 * self.filter_coeff))(x)
+        x = self_attn_block(x, int(128 * self.filter_coeff))
+        x = conv_block(int(256 * self.filter_coeff))(x)
+        x = self_attn_block(x, int(256 * self.filter_coeff))
+        x = conv_block(int(256 * self.filter_coeff))(x)
 
         activ_map_size = self.img_shape[0] // 16
         while activ_map_size > 4:
-            x = conv_block(256)(x)
+            x = conv_block(int(256 * self.filter_coeff))(x)
             activ_map_size = activ_map_size // 2
 
         # Latent Variable Calculation
@@ -92,27 +95,32 @@ class Gan:
         # # #######################
 
         decoder_input = Input(shape=(self.latent, ))
-        x = Reshape((2, 2, self.latent_channels))(decoder_input)
-        x = upscale(128)(x)
-        x = upscale(256)(x)
-        x = self_attn_block(x, 256)
-        x = upscale(256)(x)
-        x = self_attn_block(x, 256)
-        x = upscale(128)(x)
-        x = res_block(x, 128)
-        x = self_attn_block(x, 128)
+        label_input = Input(shape=(1,), dtype='int32')
+        label_embedding = Flatten()(Embedding(self.num_classes, self.latent)(label_input))
+        model_input = concatenate([decoder_input, label_embedding])
+        x = Dense(self.latent)(model_input)
+
+        x = Reshape((2, 2, self.latent_channels))(x)
+        x = upscale(int(256 * self.filter_coeff))(x)
+        x = upscale(int(128 * self.filter_coeff))(x)
+        x = self_attn_block(x, int(128 * self.filter_coeff))
+        x = upscale(int(128 * self.filter_coeff))(x)
+        x = self_attn_block(x, int(128 * self.filter_coeff))
+        x = upscale(int(128 * self.filter_coeff))(x)
+        x = res_block(x, int(128 * self.filter_coeff))
+        x = self_attn_block(x, int(128 * self.filter_coeff))
 
         outputs = []
         activ_map_size = self.img_shape[0] * 8
-        while activ_map_size < 128:
+        while activ_map_size < int(128 * self.filter_coeff):
             outputs.append(Conv2D(3, kernel_size=5, padding='same', activation="tanh")(x))
-            x = upscale(128)(x)
-            x = conv_block(128, strides=1)(x)
+            x = upscale(int(64 * self.filter_coeff))(x)
+            x = conv_block(int(64 * self.filter_coeff), strides=1)(x)
             activ_map_size *= 2
 
         x = Conv2D(self.img_shape[2], kernel_size=3, padding='same', activation="tanh")(x)
 
-        decoder = Model(inputs=decoder_input, outputs=x)
+        decoder = Model(inputs=[decoder_input, label_input], outputs=x)
 
         return encoder, decoder
 

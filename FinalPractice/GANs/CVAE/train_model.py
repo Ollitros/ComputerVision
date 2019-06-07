@@ -1,7 +1,6 @@
 import numpy as np
 import cv2 as cv
 import time
-import keras.backend as K
 from keras.datasets import mnist
 from FinalPractice.GANs.CVAE.network.model import Gan
 
@@ -11,7 +10,7 @@ def sample_images(model, epoch, latent):
     sampled_labels = np.arange(0, 10).reshape(-1, 1)
 
     batch_noise = np.random.normal(0, 1, (10, latent))
-    prediction = model.decoder.predict([batch_noise])
+    prediction = model.decoder.predict([batch_noise, sampled_labels])
 
     # Rescale images
     prediction = np.float32(prediction) * 255
@@ -22,28 +21,28 @@ def sample_images(model, epoch, latent):
     cv.imwrite('data/images/{step}.jpg'.format(step=epoch), image)
 
 
-def test(input_shape, x, y, batch_size, latent):
+def test(input_shape, x, y, batch_size, latent, filter_coeff):
 
-    model = Gan(input_shape=input_shape, num_classes=10, batch_size=batch_size, latent=latent)
+    model = Gan(input_shape=input_shape, num_classes=10, batch_size=batch_size, latent=latent, filter_coeff=filter_coeff)
     model.load_weights()
 
-    for i in range(100):
+    for i in range(10):
 
-        useless = np.random.normal(0, 1, (1, latent))
-        prediction = model.decoder.predict(useless)
+        batch_noise = np.random.normal(0, 1, (1, latent))
+        prediction = model.decoder.predict([batch_noise, np.reshape(y[i], (1, 1))])
         prediction = np.float32(prediction * 255)
 
         print(y[i])
         print(prediction.shape)
-        cv.imwrite('data/{i}.jpg'.format(i=i), np.reshape(prediction, input_shape))
+        cv.imwrite('data/{i}-{y}.jpg'.format(i=i, y=y[i]), np.reshape(prediction, input_shape))
         cv.imshow('asdasd', np.reshape(prediction, input_shape))
         cv.waitKey(0)
         cv.destroyAllWindows()
 
 
-def train_model(input_shape, x, y, epochs, batch_size, latent):
+def train_model(input_shape, x, y, epochs, batch_size, latent, filter_coeff):
 
-    model = Gan(input_shape=input_shape, num_classes=10, batch_size=batch_size, latent=latent)
+    model = Gan(input_shape=input_shape, num_classes=10, batch_size=batch_size, latent=latent, filter_coeff=filter_coeff)
     model.load_weights()
 
     sample_interval = 1
@@ -106,9 +105,11 @@ def main():
     epochs = 10
     batch_size = 64
     latent = 8
+    filter_coeff = 0.5
 
-    # test(input_shape=input_shape, x=x, y=y_train, epochs=epochs, batch_size=batch_size, latent=latent)
-    train_model(input_shape=input_shape, x=x, y=y_train, epochs=epochs, batch_size=batch_size, latent=latent)
+    # test(input_shape=input_shape, x=x, y=y_train, batch_size=batch_size, latent=latent, filter_coeff=filter_coeff)
+    train_model(input_shape=input_shape, x=x, y=y_train, epochs=epochs,
+                batch_size=batch_size, latent=latent, filter_coeff=filter_coeff)
 
 
 if __name__ == '__main__':
