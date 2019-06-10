@@ -6,12 +6,12 @@ from keras.datasets import mnist
 from FinalPractice.GANs.CVAE_GAN.network.model import Gan
 
 
-def sample_images(model, epoch):
+def sample_images(model, epoch, latent):
 
     sampled_labels = np.arange(0, 10).reshape(-1, 1)
 
-    batch_noise = np.random.normal(0, 1, (10, 4 * 4 * 128))
-    prediction = model.decoder.predict([batch_noise])
+    batch_noise = np.random.normal(0, 1, (10, latent))
+    prediction = model.decoder.predict([batch_noise, sampled_labels])
 
     # Rescale images
     prediction = np.float32(prediction) * 255
@@ -22,39 +22,27 @@ def sample_images(model, epoch):
     cv.imwrite('data/images/{step}.jpg'.format(step=epoch), image)
 
 
-def test(input_shape, x, y):
+def test(input_shape, x, y, batch_size, latent, filter_coeff):
 
-    model = Gan(input_shape=input_shape, num_classes=10)
+    model = Gan(input_shape=input_shape, num_classes=10, batch_size=batch_size, latent=latent, filter_coeff=filter_coeff)
     model.load_weights()
 
-    for i in range(100):
-        # useless = np.random.normal(0, 1, (10, 32, 32, 1))
-        # batch_noise = np.random.normal(0, 1, (1, 32 * 32 * 1))
-        # prediction = model.generator.predict([batch_noise, np.asarray([5]), useless])
-        # prediction = np.float32(prediction * 255)
-        #
-        # print(y[i])
-        # print(prediction.shape)
-        # cv.imwrite('data/{i}.jpg'.format(i=i), np.reshape(prediction, (32, 32, 1)))
-        # cv.imshow('asdasd', np.reshape(prediction, (32, 32, 1)))
-        # cv.waitKey(0)
-        # cv.destroyAllWindows()
+    for i in range(10):
 
-        useless = np.random.normal(0, 1, (1, 4 * 4 * 128))
-        prediction = model.decoder.predict(useless)
+        batch_noise = np.random.normal(0, 1, (1, latent))
+        prediction = model.decoder.predict([batch_noise, np.reshape(y[i], (1, 1))])
         prediction = np.float32(prediction * 255)
 
         print(y[i])
         print(prediction.shape)
-        cv.imwrite('data/{i}.jpg'.format(i=i), np.reshape(prediction, (32, 32, 1)))
-        cv.imshow('asdasd', np.reshape(prediction, (32, 32, 1)))
+        cv.imwrite('data/{i}-{y}.jpg'.format(i=i, y=y[i]), np.reshape(prediction, input_shape))
+        cv.imshow('asdasd', np.reshape(prediction, input_shape))
         cv.waitKey(0)
         cv.destroyAllWindows()
 
 
-def train_model(input_shape, x, y, epochs, batch_size):
-
-    model = Gan(input_shape=input_shape, num_classes=10)
+def train_model(input_shape, x, y, epochs, batch_size, latent, filter_coeff):
+    model = Gan(input_shape=input_shape, num_classes=10, batch_size=batch_size, latent=latent, filter_coeff=filter_coeff)
     model.load_weights()
 
     sample_interval = 1
@@ -64,7 +52,7 @@ def train_model(input_shape, x, y, epochs, batch_size):
         train_x = x.tolist()
         train_x.append(train_x[-1])
     train_x = np.asarray(x)
-    train_x = np.reshape(train_x, (train_x.shape[0], 32, 32, 1))
+    train_x = np.reshape(train_x, (train_x.shape[0], input_shape[0], input_shape[1], input_shape[2]))
 
     valid = np.ones((batch_size, 1))
     fake = np.zeros((batch_size, 1))
@@ -79,37 +67,41 @@ def train_model(input_shape, x, y, epochs, batch_size):
             # ---------------------
 
             # Sample noise as generator input
-            noise = np.random.normal(0, 1, (batch_size, 4 * 4 * 128))
+            noise = np.random.normal(0, 1, (batch_size, latent))
 
             # Generate a half batch of new images
-            latent_vect = model.encoder.predict([np.reshape(train_x[step:(step + batch_size)], (128, 32 * 32 * 1)),
-                                                y[step:(step + batch_size)],
-                                                train_x[step:(step + batch_size)]])
-            encodeImg = model.decoder.predict(latent_vect[2])
-            fake_gen = model.decoder.predict(noise)
-
+            # latent_vect = model.encoder.predict([np.reshape(train_x[step:(step + batch_size)], (batch_size, input_shape[0] * input_shape[1] * input_shape[2])),
+            #                                     y[step:(step + batch_size)],
+            #                                     train_x[step:(step + batch_size)]])
+            # encodeImg = model.decoder.predict(latent_vect[2])
+            fake_gen = model.decoder.predict([noise, y[step:(step + batch_size)]])
             # Train the discriminator
             d_loss_real_1 = model.discriminator.train_on_batch([train_x[step:(step + batch_size)], y[step:(step + batch_size)]], valid)
-            d_loss_real_2 = model.discriminator.train_on_batch([encodeImg, y[step:(step + batch_size)]], valid)
+            # d_loss_real_2 = model.discriminator.train_on_batch([encodeImg, y[step:(step + batch_size)]], valid)
             d_loss_fake = model.discriminator.train_on_batch([fake_gen, y[step:(step + batch_size)]], fake)
-            d_loss = 0.5 * np.add(np.add(d_loss_real_1, d_loss_real_2) * 0.5, d_loss_fake)
+            # d_loss = 0.5 * np.add(np.add(d_loss_real_1, d_loss_real_2) * 0.5, d_loss_fake)
+            d_loss = 0.5 * np.add(d_loss_real_1, d_loss_fake)
 
             # ---------------------
             #  Train Generator
             # ---------------------
 
             # Sample noise as generator input
-            g_loss = model.generator.train_on_batch([np.reshape(train_x[step:(step + batch_size)], (128, 32 * 32 * 1)),
+            g_loss = model.generator.train_on_batch([np.reshape(train_x[step:(step + batch_size)], (batch_size,
+                                                                                                    input_shape[0] *
+                                                                                                    input_shape[1] *
+                                                                                                    input_shape[2])),
                                                      y[step:(step + batch_size)],
-                                                     train_x[step:(step + batch_size)]], valid)
+                                                     train_x[step:(step + batch_size)]],
+                                                     valid)
 
             # ---------------------
             #  Train Combined
             # ---------------------
 
             # Sample noise as generator input
-            noise = np.random.normal(0, 1, (batch_size, 4 * 4 * 128))
-            latent_vect = model.encoder.predict([np.reshape(train_x[step:(step + batch_size)], (128, 32 * 32 * 1)),
+            # noise = np.random.normal(0, 1, (batch_size, 4 * 4 * 128))
+            latent_vect = model.encoder.predict([np.reshape(train_x[step:(step + batch_size)], (batch_size, input_shape[0] * input_shape[1] * input_shape[2])),
                                                  y[step:(step + batch_size)],
                                                  train_x[step:(step + batch_size)]])
 
@@ -127,7 +119,7 @@ def train_model(input_shape, x, y, epochs, batch_size):
 
         # If at save interval => save generated image samples
         if epoch % sample_interval == 0:
-            sample_images(model, epoch + 2)
+            sample_images(model, epoch + 2, latent)
 
         model.save_weights()
 
@@ -147,13 +139,14 @@ def main():
 
     x = np.asarray(x_resized).astype('float32')
     x /= 255
-    epochs = 3
-    batch_size = 128
+    epochs = 8
+    batch_size = 64
+    latent = 8
+    filter_coeff = 0.5
 
-    # x = x[0:1000]
-    # y_train = y_train[0:1000]
-    # test(input_shape, x, y_train)
-    train_model(input_shape=input_shape, x=x, y=y_train, epochs=epochs, batch_size=batch_size)
+    # test(input_shape=input_shape, x=x, y=y_train, batch_size=batch_size, latent=latent, filter_coeff=filter_coeff)
+    train_model(input_shape=input_shape, x=x, y=y_train, epochs=epochs,
+                batch_size=batch_size, latent=latent, filter_coeff=filter_coeff)
 
 
 if __name__ == '__main__':

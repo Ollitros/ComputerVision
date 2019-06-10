@@ -126,14 +126,14 @@ class Gan:
 
     def load_weights(self, path="data/models"):
         self.generator.load_weights("{path}/generator.h5".format(path=path))
-        self.decoder.save_weights("{path}/decoder.h5".format(path=path))
-        self.encoder.save_weights("{path}/encoder.h5".format(path=path))
+        self.decoder.load_weights("{path}/decoder.h5".format(path=path))
+        self.encoder.load_weights("{path}/encoder.h5".format(path=path))
         print("Model weights files are successfully loaded.")
 
     def save_weights(self, path="data/models"):
-        self.generator.save_weights("{path}/generator.h5".format(path=path))
-        self.decoder.save_weights("{path}/decoder.h5".format(path=path))
-        self.encoder.save_weights("{path}/encoder.h5".format(path=path))
+        self.generator.save("{path}/generator.h5".format(path=path))
+        self.decoder.save("{path}/decoder.h5".format(path=path))
+        self.encoder.save("{path}/encoder.h5".format(path=path))
         print("Model weights files have been saved to {path}.".format(path=path))
 
 

@@ -82,7 +82,7 @@ def train_model(input_shape, x, y, epochs, batch_size, latent, filter_coeff):
 
         # If at save interval => save generated image samples
         if epoch % sample_interval == 0:
-            sample_images(model, epoch + 10, latent)
+            sample_images(model, epoch + 40, latent)
 
         model.save_weights()
 
