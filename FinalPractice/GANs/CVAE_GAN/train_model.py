@@ -43,7 +43,7 @@ def test(input_shape, x, y, batch_size, latent, filter_coeff):
 
 def train_model(input_shape, x, y, epochs, batch_size, latent, filter_coeff):
     model = Gan(input_shape=input_shape, num_classes=10, batch_size=batch_size, latent=latent, filter_coeff=filter_coeff)
-    model.load_weights()
+    # model.load_weights()
 
     sample_interval = 1
     t0 = time.time()
@@ -68,19 +68,12 @@ def train_model(input_shape, x, y, epochs, batch_size, latent, filter_coeff):
 
             # Sample noise as generator input
             noise = np.random.normal(0, 1, (batch_size, latent))
-
-            # Generate a half batch of new images
-            # latent_vect = model.encoder.predict([np.reshape(train_x[step:(step + batch_size)], (batch_size, input_shape[0] * input_shape[1] * input_shape[2])),
-            #                                     y[step:(step + batch_size)],
-            #                                     train_x[step:(step + batch_size)]])
-            # encodeImg = model.decoder.predict(latent_vect[2])
             fake_gen = model.decoder.predict([noise, y[step:(step + batch_size)]])
+
             # Train the discriminator
-            d_loss_real_1 = model.discriminator.train_on_batch([train_x[step:(step + batch_size)], y[step:(step + batch_size)]], valid)
-            # d_loss_real_2 = model.discriminator.train_on_batch([encodeImg, y[step:(step + batch_size)]], valid)
+            d_loss_real = model.discriminator.train_on_batch([train_x[step:(step + batch_size)], y[step:(step + batch_size)]], valid)
             d_loss_fake = model.discriminator.train_on_batch([fake_gen, y[step:(step + batch_size)]], fake)
-            # d_loss = 0.5 * np.add(np.add(d_loss_real_1, d_loss_real_2) * 0.5, d_loss_fake)
-            d_loss = 0.5 * np.add(d_loss_real_1, d_loss_fake)
+            d_loss = 0.5 * np.add(d_loss_real, d_loss_fake)
 
             # ---------------------
             #  Train Generator
@@ -100,7 +93,6 @@ def train_model(input_shape, x, y, epochs, batch_size, latent, filter_coeff):
             # ---------------------
 
             # Sample noise as generator input
-            # noise = np.random.normal(0, 1, (batch_size, 4 * 4 * 128))
             latent_vect = model.encoder.predict([np.reshape(train_x[step:(step + batch_size)], (batch_size, input_shape[0] * input_shape[1] * input_shape[2])),
                                                  y[step:(step + batch_size)],
                                                  train_x[step:(step + batch_size)]])
@@ -119,7 +111,7 @@ def train_model(input_shape, x, y, epochs, batch_size, latent, filter_coeff):
 
         # If at save interval => save generated image samples
         if epoch % sample_interval == 0:
-            sample_images(model, epoch + 2, latent)
+            sample_images(model, epoch + 0, latent)
 
         model.save_weights()
 
@@ -139,7 +131,7 @@ def main():
 
     x = np.asarray(x_resized).astype('float32')
     x /= 255
-    epochs = 8
+    epochs = 10
     batch_size = 64
     latent = 8
     filter_coeff = 0.5
